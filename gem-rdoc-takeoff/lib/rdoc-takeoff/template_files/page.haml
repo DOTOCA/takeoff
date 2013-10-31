@@ -1,0 +1,23 @@
+- entry = values[:entry]
+- file_page = !values[:classmod]
+- methods = entry.method_list + entry.attributes
+- description = entry.description
+- title_in_description = description && (description.match /\A\s*<h(1[^>]*?)>/i)
+- description.gsub!(%r{\A\s*<h(1|2)[^>]*?>(?<tag>.*?)</h(1|2)>}){|m| %Q[<div class="page-header">#{m}</div>] } if title_in_description
+
+- title = capture_haml do
+  - if file_page
+    = values[:title]
+  - else
+    = values[:entry].full_name
+
+- if not title_in_description
+  .page-header
+    %h1.name
+      = title
+%section#content
+  #text
+    - if values[:description]
+      #description~ sanitize_code_blocks values[:description]
+    = content = yield
+    -# empty = content.gsub(/[\s\n]/, '').gsub(%r{</?[^>]+?>}, '').empty? && values[:description].empty?

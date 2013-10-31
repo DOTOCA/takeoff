@@ -1,0 +1,26 @@
+{
+    "title": "Example Book", 
+    "type": "book",
+    "entries": [
+        {
+            "icon": "i", 
+            "title": "Test", 
+            "url": "test.html"
+        }, 
+        {
+            "icon": "i", 
+            "title": "Entry with children", 
+            "url": "test.html",
+            "entries": [
+				{
+		            "icon": "i", 
+		            "title": "Test", 
+		            "url": "test.html"
+		        }
+			]
+        },
+		{
+			"title": "entrywithouturl"
+		},
+    ]
+}

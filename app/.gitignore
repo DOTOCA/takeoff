@@ -1,0 +1,7 @@
+xcuserdata
+xcshareddata
+.DS_Store
+.sass-cache
+build
+ToolingOld
+Pods

@@ -1,0 +1,145 @@
+#import <GHUnit/GHUnit.h>
+
+#import "DocSet.h"
+#import "Entry.h"
+#import "DsIdx.h"
+#import "DsClassReference.h"
+#import "Foundation+Additions.h"
+#import "DocSetBookProvider.h"
+#import "FileUtils.h"
+
+@interface DocSetTest : GHTestCase {
+	NSArray *availableBooks;
+	DocSet *osxDocSet, *ios6Docset, *ios7Docset;
+	NSArray *iosDocsets;
+}
+
+@end
+
+@implementation DocSetTest
+
+- (DocSet *) availableBookByTitle:(NSString *)title {
+	NSArray *books = [availableBooks filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"title=%@", title]];
+	GHAssertTrue(books.count == 1, @"%@", books);
+	return [books objectAtIndex:0];
+}
+
+- (void) setUpClass {
+	availableBooks = [DocSetBookProvider new].availableBooks;
+	GHAssertTrue(availableBooks.count > 2, nil);
+
+	osxDocSet = [self availableBookByTitle:@"OS X 10.8"];
+	osxDocSet.classDocPredicate = [NSPredicate predicateWithFormat:@"name in %@", [NSArray arrayWithObjects:@"NSData", @"NSButton", @"NSMutableCharacterSet", @"NSArray", @"NSKeyValueBindingCreation", @"NSObject", nil]];
+	[osxDocSet install:nil];
+
+	ios6Docset = [self availableBookByTitle:@"iOS 6.1"];
+	ios7Docset = [self availableBookByTitle:@"iOS 7"];
+	iosDocsets = [NSArray arrayWithObjects:ios6Docset, ios7Docset, nil];
+
+	for(DocSet *iosDocset in iosDocsets) {
+		iosDocset.classDocPredicate = [NSPredicate predicateWithFormat:@"name in %@", [NSArray arrayWithObjects:@"UIButton", @"UIButtonTypeContactAdd", @"NSData", @"SKLabelNode", nil]];
+		[iosDocset install:nil];
+	}
+}
+
+- (void) testTitle {
+	GHAssertEqualStrings(@"Mac OS X 10.7", osxDocSet.title, nil);
+}
+
+- (void) testStorage {
+	ZipFileStorage *storage = osxDocSet.storage;
+	GHAssertEqualStrings(storage.zipPath, [[FileUtils applicationSupportPath] stringByAppendingPathComponent:@"docset_com.apple.adc.documentation.AppleLion.CoreReference.takeoff"], nil);
+}
+
+- (void) testExamples {
+	GHAssertNotNil([osxDocSet entryForTitlePath:@"Foundation/NSData/Creating Data Objects/dataWithContentsOfURL:options:error:"], @"entry");
+	GHAssertNotNil([osxDocSet entryForTitlePath:@"AppKit/NSButton/Accessing Key Equivalents/setKeyEquivalentModifierMask:"], @"entry");
+	GHAssertNotNil([osxDocSet entryForTitlePath:@"Foundation/NSMutableCharacterSet/Inverting a Character Set/invert"], @"entry");
+	GHAssertNotNil([osxDocSet entryForTitlePath:@"AppKit/NSKeyValueBindingCreation"], @"entry");
+	GHAssertNotNil([osxDocSet entryForTitlePath:@"Foundation/NSObject/Identifying and Comparing Objects/isEqual:"], @"entry");
+
+	for(DocSet *iosDocset in iosDocsets) {
+		GHAssertNotNil([iosDocset entryForTitlePath:@"UIKit/UIButton"], @"entry");
+	}
+}
+
+- (void) testNodeToUrlToNode {
+	Entry *classEntry = [osxDocSet entryForTitlePath:@"AppKit/NSKeyValueBindingCreation"];
+	NSURL *url = classEntry.absoluteURL;
+	GHAssertEquals(classEntry, [osxDocSet entryForAbsoluteURL:url], @"entry");
+}
+
+- (void) testUrlsKeepsTheSameAfterSerializing {
+	DocSet *book2 = [[DocSet alloc] initWithDictionary:osxDocSet.dictionary parent:nil];
+	NSURL *url1 = [osxDocSet entryForTitlePath:@"AppKit/NSKeyValueBindingCreation"].absoluteURL;
+	NSURL *url2 = [book2 entryForTitlePath:@"AppKit/NSKeyValueBindingCreation"].absoluteURL;
+	NSLog(@"%@ %@", url1, url2);
+	GHAssertEqualObjects(url1, url2, nil);
+}
+
+- (void) testEntryURL {
+	Entry *entry = [osxDocSet entryForTitlePath:@"Foundation/NSArray/Querying an Array/count"];
+	GHAssertNotNil(entry, @"entry");
+	GHAssertEqualStrings(@"#//apple_ref/occ/instm/NSArray/count", entry.url, @"path");
+	NSURL *url = entry.absoluteURL;
+	GHAssertNotNil(url, @"url");
+	GHAssertTrue([url.absoluteString hasPrefix:@"file:///Library/Developer/"], @"absolute URL %@", url.absoluteString);
+	GHAssertTrue([url.absoluteString hasSuffix:@"documentation/Cocoa/Reference/Foundation/Classes/NSArray_Class/NSArray.html#//apple_ref/occ/instm/NSArray/count"], @"absolute URL %@", url.absoluteString);
+	[TestHelper expect:@"Returns the number of objects currently in the array" inResponseForURLString:[url URLByRemovingFragment].absoluteString];
+}
+
+- (void) testNoWrongEntries {
+	GHAssertNil([osxDocSet entryForTitlePath:@"NSData"], @"class on root level");
+	GHAssertNil([osxDocSet entryForTitlePath:@"Foundation/NSData/NSData"], @"class in class");
+
+	for(DocSet *iosDocset in iosDocsets) {
+		GHAssertNil([iosDocset entryForTitlePath:@"UIKit/UIButtonTypeContactAdd"], @"entry");
+	}
+
+	NSArray *foundation = [osxDocSet entryForTitlePath:@"Foundation"].entries;
+	NSArray *dataClasses = [foundation select:^(Entry *entry){return [entry.title isEqualTo:@"NSData"];}];
+	GHAssertEquals((int)[dataClasses count], 1, @"classes are present only once, but was: %@", dataClasses);
+}
+
+- (NSString *) osxIdxPath {
+    NSURL *url = [NSURL URLWithString:@"../docSet.dsidx" relativeToURL:osxDocSet.absoluteURL];
+    return url.path;
+}
+
+- (void) testDsIdxReadClasses {
+	DsIdx *idx = [[DsIdx alloc] initWithPath:self.osxIdxPath];
+	NSArray *allClasses = idx.allClasses;
+	GHAssertNotNil(allClasses, @"allClasses");
+
+	ClassDoc *data = [allClasses find:^(ClassDoc *s){return [s.name isEqualToString:@"NSData"];}];
+	GHAssertNotNil(data, @"Got %@", allClasses);
+	GHAssertEqualStrings(@"documentation/Cocoa/Reference/Foundation/Classes/NSData_Class/Reference/Reference.html", data.path, @"path");
+
+	GHAssertNil([allClasses find:^(ClassDoc *s){return [s.name isEqualToString:@"init"];}], @"Got %@", allClasses);
+}
+
+- (void) testExtractOutlineFromClassReferenceHTMLFile {
+//    NSLog(@"%@", [osxDocSet entryForTitlePath:@"Foundation/NSData"].absoluteURL.path);
+
+    NSString* path = [NSHomeDirectory() stringByAppendingPathComponent:@"Library/Developer/Shared/Documentation/DocSets/com.apple.adc.documentation.AppleOSX10_8.CoreReference.docset/Contents/Resources/Documents/documentation/Cocoa/Reference/Foundation/Classes/NSData_Class/Reference/Reference.html"];
+	NSLog(@"%@", path);
+	DsClassReference *ref = [[DsClassReference alloc] initWithURL:[NSURL fileURLWithPath:path]];
+
+	GHAssertNotNil(ref.tasks, @"tasks");
+	GHAssertEqualStrings([TestHelper stringForTestResource:@"NSDataOutline.txt"], ref.tasks.debugString, @"text");
+	GHAssertEqualStrings(@"Foundation", ref.framework, @"text");
+}
+
+- (void) testOutlineEncoding {
+    //NSLog(@"%@", [ios7Docset entryForTitlePath:@"SpriteKit/SKLabelNode"].absoluteURL.path);
+
+    NSString* path = [NSHomeDirectory() stringByAppendingPathComponent:@"Library/Developer/Shared/Documentation/DocSets/com.apple.adc.documentation.AppleiOS7.0.iOSLibrary.docset/Contents/Resources/Documents/documentation/SpriteKit/Reference/SKLabelNode_Ref/Reference/Reference.html"];
+	NSLog(@"%@", path);
+	DsClassReference *ref = [[DsClassReference alloc] initWithURL:[NSURL fileURLWithPath:path]];
+
+	GHAssertNotNil(ref.tasks, @"tasks");
+	GHAssertEqualStrings([TestHelper stringForTestResource:@"SKLabelNode.txt"], ref.tasks.debugString, @"text");
+}
+
+
+@end

@@ -1,0 +1,6 @@
+Test => 0.54
+	String => 0.60
+	AAStringNotReally => 0.29
+	StringFoo => 0.46
+	StringScanner => 0.35
+	ZZStringNotReally => 0.29

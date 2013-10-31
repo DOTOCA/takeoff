@@ -1,0 +1,67 @@
+#import <GHUnit/GHUnit.h>
+#import <OCMock/OCMock.h>
+
+#import "MainWindowController.h"
+#import "LoadDelegate.h"
+#import "WebView+Utils.h"
+#import "LocalStubURLProtocol.h"
+#import "NSOutlineView+Additions.h"
+#import "BookProvider.h"
+#import "FileUtils.h"
+#import "TakeOffUIBaseTest.h"
+
+@interface LibraryExamplesTest : GHTestCase {
+	Library *library;
+}
+
+@end
+
+@implementation LibraryExamplesTest
+
+#pragma mark - Test setup
+
+- (void) setUpClass {
+	library = [Library new];
+	[library scanFolder:[TestHelper pathForTestResource:@"testlib"]];
+	[library waitUntilAllBooksLoaded];
+}
+
+- (Entry *) firstMatch {
+	// TODO: depth first search for matching node
+	return [library findDepthFirst:[NSPredicate predicateWithFormat:@"match==YES"] filtered:YES];
+}
+
+- (void) assertFilter:(NSString *)filter firstMatch:(NSString*)titlePath {
+	[library filter:filter];
+	NSString *expectedTitlePath = [NSString stringWithFormat:@"Library/%@", titlePath];
+	NSLog(@"%@", [library debugRankingString]);
+	GHAssertEqualStrings(expectedTitlePath, [self firstMatch].titlePath, nil);
+}
+
+#pragma mark - Test cases
+
+- (void) testCSSProperty {
+	[self assertFilter:@"css display" firstMatch:@"CSS/display"];
+}
+
+- (void) testNSWindow {
+	[self assertFilter:@"NSWindow" firstMatch:@"Mac OS X 10.7/AppKit/NSWindow"];
+}
+
+- (void) testMacStringLength {
+	[self assertFilter:@"mac string length" firstMatch:@"Mac OS X 10.7/Foundation/NSString/Getting a String’s Length"];
+}
+
+- (void) testRubyString {
+	[self assertFilter:@"ruby string" firstMatch:@"Ruby 1.9.2-p290/String"];
+}
+
+- (void) testRubyNow {
+	[self assertFilter:@"ruby now" firstMatch:@"Ruby 1.9.2-p290/Date/::now"];
+}
+
+- (void) testRubyStringLength {
+	[self assertFilter:@"ruby string length" firstMatch:@"Ruby 1.9.2-p290/String/length"];
+}
+
+@end

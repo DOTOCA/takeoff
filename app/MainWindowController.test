@@ -1,0 +1,307 @@
+#import "MainWindowController.h"
+
+#import "Fixtures.h"
+#import "DocsOutlineDelegate.h"
+#import "NSOutlineView+Additions.h"
+#import "DocsOutlineDataSource.h"
+#import "Benchmark.h"
+
+@interface TakeOffWindowControllerTest : GHTestCase {
+	Library *library;
+	Book *book;
+	id webView;
+	NSOutlineView *outline;
+	MainWindowController *controller;
+	BOOL hidden;
+
+	Entry *entryBlue;
+	Entry *entryGreen;
+
+	id webFrame;
+	NSString *mainFrameURL;
+	id frameLoadDelegate;
+}
+
+@property (strong, nonatomic) NSString *mainFrameURL;
+@property (strong, nonatomic) id frameLoadDelegate;
+@property (assign, nonatomic) BOOL hidden;
+
+- (void) assertOutlineNodes:(NSString *)firstObj, ... NS_REQUIRES_NIL_TERMINATION;
+
+@end
+
+@implementation TakeOffWindowControllerTest
+
+#pragma mark - Browser fake
+
+@synthesize mainFrameURL, frameLoadDelegate, hidden;
+
+- (void) setMainFrameURL:(NSString *)url {
+	mainFrameURL = url;
+	[[webView frameLoadDelegate] webView:webView didFinishLoadForFrame:webFrame];
+	[[webView frameLoadDelegate] webView:webView didChangeLocationWithinPageForFrame:webFrame];
+}
+
+- (NSURL *) URL {
+	return [NSURL URLWithString:mainFrameURL];
+}
+
+- (void) loadRequest:(NSURLRequest *)request {
+	self.mainFrameURL = request.URL.absoluteString;
+}
+
+- (id) fakeWebView {
+	mainFrameURL = nil;
+	frameLoadDelegate = nil;
+	hidden = NO;
+
+	id view = [OCMockObject mockForClass:[WebView class]];
+	webFrame = [OCMockObject mockForClass:[WebFrame class]];
+	[[[view stub] andReturnValue:[NSNumber numberWithBool:NO]] canGoForward];
+	[[[view stub] andReturnValue:[NSNumber numberWithBool:NO]] canGoBack];
+	[[[view stub] andReturn:nil] preferences];
+
+	[[[view stub] andCall:@selector(mainFrameURL) onObject:self] mainFrameURL];
+	[[[view stub] andCall:@selector(setMainFrameURL:) onObject:self] setMainFrameURL:OCMOCK_ANY];
+
+	[[[view stub] andCall:@selector(frameLoadDelegate) onObject:self] frameLoadDelegate];
+	[[[view stub] andCall:@selector(setFrameLoadDelegate:) onObject:self] setFrameLoadDelegate:OCMOCK_ANY];
+
+	[[[view stub] andCall:@selector(isHidden) onObject:self] isHidden];
+	[[[view stub] andCall:@selector(setHidden:) onObject:self] setHidden:NO];
+
+	[[view stub] setUIDelegate:OCMOCK_ANY];
+	[[view stub] setPolicyDelegate:OCMOCK_ANY];
+	[[view stub] willChangeValueForKey:OCMOCK_ANY];
+	[[view stub] didChangeValueForKey:OCMOCK_ANY];
+
+	[[[view stub] andCall:@selector(URL) onObject:self] URL];
+	[[[view stub] andReturn:webFrame] mainFrame];
+	return view;
+}
+
+#pragma mark - Test setup
+
+- (void) setUp {
+
+	book = [Book loadFromStorage:[Fixtures testZip:@"example2"]];
+	library = [Library new];
+	[library addBook:book];
+
+	entryBlue = [book entryForTitlePath:@"Blue"];
+	entryGreen = [book entryForTitlePath:@"Green"];
+	GHAssertNotNil(entryBlue, @"entryBlue present");
+	GHAssertNotNil(entryGreen, @"entryGreen present");
+
+	controller = [[MainWindowController alloc] init];
+	outline = controller.outlineView = [[NSOutlineView alloc] init];
+	[outline addTableColumn:[[NSTableColumn alloc] initWithIdentifier:@"Included"]];
+	[outline addTableColumn:[[NSTableColumn alloc] initWithIdentifier:@"Title"]];
+
+	controller.library = library;
+	DocsOutlineDataSource *dataSource = [DocsOutlineDataSource new];
+	dataSource.library = library;
+	outline.dataSource = dataSource;
+	DocsOutlineDelegate *delegate = [DocsOutlineDelegate new];
+	outline.delegate = delegate;
+
+	webView = [self fakeWebView];
+	controller.webView = webView;
+
+	[controller prepare];
+}
+
+- (void) verifyMocks {
+	[webView verify];
+	[webFrame verify];
+}
+
+- (void) tearDown {
+	[self verifyMocks];
+}
+
+#pragma mark - Helpers
+
+- (void) expectWebViewRequest {
+	[[webView expect] setResourceLoadDelegate:OCMOCK_ANY];
+	[[[webFrame expect] andCall:@selector(loadRequest:) onObject:self] loadRequest:OCMOCK_ANY];
+}
+
+- (void) assertBrowserContents:(id)expected {
+	if([expected isKindOfClass:[Entry class]])
+		expected = ((Entry *)expected).absoluteURL;
+	if([expected isKindOfClass:[NSURL class]])
+		expected = ((NSURL *)expected).absoluteString;
+	GHAssertTrue([expected isKindOfClass:[NSString class]], @"Expected String, NSURL or Entry, got %@", [expected class]);
+	GHAssertNotNil(expected, @"obj");
+
+	GHAssertEqualStrings(expected, mainFrameURL, @"Expected the browser at %@, but was at %@", expected, mainFrameURL);
+	GHAssertFalse(hidden, @"Expected the browser to be visible, but it is hidden.");
+}
+
+- (void) loadEntry:(Entry *)entry {
+	[self expectWebViewRequest];
+	[controller setEntry:entry];
+	[self verifyMocks];
+}
+
+- (void) assertOutlineNodes:(NSString *)rootString, ... {
+	NSMutableString *actualOutline = [NSMutableString string];
+	va_list args;
+    va_start(args, rootString);
+    for (NSString *arg = rootString; arg != nil; arg = va_arg(args, NSString*)) {
+		if (arg != rootString)
+			[actualOutline appendString:@"\n"];
+		[actualOutline appendString:arg];
+	}
+	va_end(args);
+
+	GHAssertEqualStrings(actualOutline, [outline columnValueString:@"Title"], @"outline");
+}
+
+#pragma mark - Tests
+
+- (void) testOutlineContents {
+	[outline expandAll];
+	[self assertOutlineNodes:
+		@"EXAMPLE PAGE",
+		@"	Example page",
+		@"	Red",
+		@"	Green",
+		@"	Blue", nil];
+}
+
+- (void) testFirstSearch {
+	[self expectWebViewRequest];
+	controller.searchTerm = @"gre";
+	[self assertOutlineNodes:
+		@"EXAMPLE PAGE",
+		@"	[[Green]]", nil];
+	[self assertBrowserContents:entryGreen];
+}
+
+- (void) testSearchWithEntryShown {
+	[self loadEntry:entryGreen];
+
+	// searching for another entry should make the other page loading
+	[self expectWebViewRequest];
+
+	[controller setSearchTerm:@"Blue"];
+
+	[self assertOutlineNodes:
+		@"EXAMPLE PAGE",
+		@"	[[Blue]]", nil];
+
+	[self assertBrowserContents:entryBlue];
+}
+
+- (void) testEmptySearchResult {
+	[self loadEntry:entryGreen];
+
+	[[[webView expect] andCall:@selector(setHidden:) onObject:self] setHidden:YES];
+	controller.searchTerm = @"garglgargl";
+	[self assertOutlineNodes:nil];
+	GHAssertTrue(hidden, @"browser hidden");
+
+	[self expectWebViewRequest];
+	[controller setSearchTerm:@"blue"];
+	[self assertBrowserContents:entryBlue];
+}
+
+- (void) testWebViewNotTouchedIfSelectionDoesNotChange {
+	[self loadEntry:entryGreen];
+
+	// check that setting the same entry again does not touch the browser
+	[controller setEntry:entryGreen];
+
+	// also, searching for this entry should not make the browser do anything
+	[controller setSearchTerm:@"gre"];
+	[self assertBrowserContents:entryGreen];
+
+	[controller setSearchTerm:@"green"];
+	[self assertBrowserContents:entryGreen];
+}
+
+- (void) testOutlineInSyncWithBrowser {
+	[webView setMainFrameURL:entryBlue.absoluteURL.absoluteString];
+	GHAssertEqualObjects(entryBlue, [outline itemAtRow:outline.selectedRow], @"entryBlue selection");
+	[webView setMainFrameURL:entryGreen.absoluteURL.absoluteString];
+	GHAssertEqualObjects(entryGreen, [outline itemAtRow:outline.selectedRow], @"entryGreen selection");
+}
+
+- (void) openEntryInBrowser:(Entry *)entry fragment:(NSString *)fragment {
+	//[self expectWebViewRequest];
+
+	NSString *url = entryBlue.absoluteURL.absoluteString;
+	if (fragment) {
+		url = [NSString stringWithFormat:@"%@#%@", [entryBlue.absoluteURL URLByRemovingFragment].absoluteString, fragment];
+	}
+
+	[webView setMainFrameURL:url];
+
+	GHAssertEqualObjects(entryBlue, [outline itemAtRow:outline.selectedRow], @"entryBlue selection");
+	GHAssertEqualStrings(url, [webView mainFrameURL], nil);
+}
+
+- (void) testOutlineInSyncWithBrowserURLWithFragment {
+	[self openEntryInBrowser:entryBlue fragment:@"test"];
+}
+
+- (void) loadAll {
+	NSLog(@"Loading all default books");
+	[library waitUntilAllBooksLoaded];
+}
+
+/*
+- (void) linkCheck:(Entry*)entry {
+	// Book might have a URL for resolving relative URLs only, don't check this one
+	NSURL *url = entry.absoluteURL;
+	if (url) {
+		url = [url URLByRemovingFragment];
+		if([entry.title hasPrefix:@"Erb"]) {
+			return;
+		}
+		if ([url.scheme isEqualTo:@"file"]) {
+			NSString *path = url.resourceSpecifier;
+			GHAssertTrue([[NSFileManager defaultManager] fileExistsAtPath:path], @"Not found: %@ for %@", path, entry);
+		} else {
+			BOOL found = [NSData dataWithContentsOfURL:url] != nil;
+			if (!found) {
+				for(Entry *e in entry.path) {
+					NSLog(@"%@: %@ -> %@", e, e.url, e.absoluteURL);
+				}
+				GHFail(@"Not found: %@ for %@", url, entry);
+			}
+		}
+	}
+	// Visit full tree
+	for(Entry *e in entry.entries) {
+		[self linkCheck:e];
+	}
+}
+
+- (void) testLinkCheck {
+	[self loadAll];
+	[self linkCheck:books];
+}
+*/
+
+
+- (void) testBenchmarkSearch {
+	[self loadAll];
+
+	[[webView stub] setResourceLoadDelegate:OCMOCK_ANY];
+	[[[webFrame stub] andCall:@selector(loadRequest:) onObject:self] loadRequest:OCMOCK_ANY];
+	[[webView stub] setHidden:YES];
+
+	NSString *searchStrings = @"abcdefghijklmnopqrstuvwxyz";
+
+	double avgDuration = [Benchmark run:^(int i){
+		controller.searchTerm = [searchStrings substringWithRange:NSMakeRange(i%20, (i%3)+1)];
+		return (int)[outline numberOfRows];
+	} times:10];
+
+	GHAssertLessThan(avgDuration, (double)0.1, @"Search time 100ms max");
+}
+
+@end

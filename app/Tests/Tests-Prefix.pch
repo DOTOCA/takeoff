@@ -1,0 +1,14 @@
+//
+// Prefix header for all source files of the 'Tests' target in the 'Tests' project
+//
+
+#ifdef __OBJC__
+	#import <Cocoa/Cocoa.h>
+	#import <GHUnit/GHUnit.h>
+	#import <OCMock/OCMock.h>
+	#import "LogLevels.h"
+	#import "TestHelper.h"
+	#import "Fixtures.h"
+	#import "NSData+Utils.h"
+	#import "Foundation+Additions.h"
+#endif

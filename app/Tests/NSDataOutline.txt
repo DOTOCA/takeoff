@@ -1,0 +1,37 @@
+Tasks
+	[i] Creating Data Objects
+		[m] data => #//apple_ref/occ/clm/NSData/data
+		[m] dataWithBytes:length: => #//apple_ref/occ/clm/NSData/dataWithBytes:length:
+		[m] dataWithBytesNoCopy:length: => #//apple_ref/occ/clm/NSData/dataWithBytesNoCopy:length:
+		[m] dataWithBytesNoCopy:length:freeWhenDone: => #//apple_ref/occ/clm/NSData/dataWithBytesNoCopy:length:freeWhenDone:
+		[m] dataWithContentsOfFile: => #//apple_ref/occ/clm/NSData/dataWithContentsOfFile:
+		[m] dataWithContentsOfFile:options:error: => #//apple_ref/occ/clm/NSData/dataWithContentsOfFile:options:error:
+		[m] dataWithContentsOfURL: => #//apple_ref/occ/clm/NSData/dataWithContentsOfURL:
+		[m] dataWithContentsOfURL:options:error: => #//apple_ref/occ/clm/NSData/dataWithContentsOfURL:options:error:
+		[m] dataWithData: => #//apple_ref/occ/clm/NSData/dataWithData:
+		[m] initWithBytes:length: => #//apple_ref/occ/instm/NSData/initWithBytes:length:
+		[m] initWithBytesNoCopy:length: => #//apple_ref/occ/instm/NSData/initWithBytesNoCopy:length:
+		[m] initWithBytesNoCopy:length:freeWhenDone: => #//apple_ref/occ/instm/NSData/initWithBytesNoCopy:length:freeWhenDone:
+		[m] initWithContentsOfFile: => #//apple_ref/occ/instm/NSData/initWithContentsOfFile:
+		[m] initWithContentsOfFile:options:error: => #//apple_ref/occ/instm/NSData/initWithContentsOfFile:options:error:
+		[m] initWithContentsOfURL: => #//apple_ref/occ/instm/NSData/initWithContentsOfURL:
+		[m] initWithContentsOfURL:options:error: => #//apple_ref/occ/instm/NSData/initWithContentsOfURL:options:error:
+		[m] initWithData: => #//apple_ref/occ/instm/NSData/initWithData:
+		[m] dataWithContentsOfMappedFile: => ../DeprecationAppendix/AppendixADeprecatedAPI.html#//apple_ref/occ/clm/NSData/dataWithContentsOfMappedFile:
+		[m] initWithContentsOfMappedFile: => ../DeprecationAppendix/AppendixADeprecatedAPI.html#//apple_ref/occ/instm/NSData/initWithContentsOfMappedFile:
+	[i] Accessing Data
+		[m] bytes => #//apple_ref/occ/instm/NSData/bytes
+		[m] description => #//apple_ref/occ/instm/NSData/description
+		[m] getBytes:length: => #//apple_ref/occ/instm/NSData/getBytes:length:
+		[m] getBytes:range: => #//apple_ref/occ/instm/NSData/getBytes:range:
+		[m] subdataWithRange: => #//apple_ref/occ/instm/NSData/subdataWithRange:
+		[m] rangeOfData:options:range: => #//apple_ref/occ/instm/NSData/rangeOfData:options:range:
+		[m] getBytes: => ../DeprecationAppendix/AppendixADeprecatedAPI.html#//apple_ref/occ/instm/NSData/getBytes:
+	[i] Testing Data
+		[m] isEqualToData: => #//apple_ref/occ/instm/NSData/isEqualToData:
+		[m] length => #//apple_ref/occ/instm/NSData/length
+	[i] Storing Data
+		[m] writeToFile:atomically: => #//apple_ref/occ/instm/NSData/writeToFile:atomically:
+		[m] writeToFile:options:error: => #//apple_ref/occ/instm/NSData/writeToFile:options:error:
+		[m] writeToURL:atomically: => #//apple_ref/occ/instm/NSData/writeToURL:atomically:
+		[m] writeToURL:options:error: => #//apple_ref/occ/instm/NSData/writeToURL:options:error:

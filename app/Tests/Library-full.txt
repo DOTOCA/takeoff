@@ -1,0 +1,15 @@
+Library
+	Example Book
+		[i] Test => test.html
+		[i] Entry with children => entry_2.html
+			[i] Test red => entry_2.1.html
+			[i] Entry 2.2 green => #2.2
+			[i] Entry 2.3 blue
+				[i] Entry 2.3.1 cars => #2.3.1
+					[i] Entry 2.3.1.1 coffeecup => #2.3.1.1
+					[i] Watering pot => #2.3.1.2
+	Example page
+		Example page => http-www.example.org/test/test.html
+		Red => http-www.example.org/test/red.html
+		Green => http-www.example.org/test/green.html
+		Blue => http-www.example.org/test/blue.html

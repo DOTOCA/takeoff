@@ -1,0 +1,36 @@
+#import "NSMutableData+Additions.h"
+
+@interface NSMutableDataAdditionsTest : GHTestCase { }
+@end
+
+typedef void (^DataBlock)(NSMutableData *);
+
+@implementation NSMutableDataAdditionsTest
+
+- (void) execute:(DataBlock)yield expect:(NSString *)result {
+	NSMutableData *data = [NSMutableData data];
+	yield(data);
+	GHAssertEqualStrings(result, [data description], nil);
+}
+
+- (void) testCString {
+	[self execute:^(id data) { [data appendCString:"abc"]; } expect:@"<616263>"];
+}
+
+- (void) testShort {
+	[self execute:^(id data) {
+		[data appendUInt16Big:0];
+		[data appendUInt16Big:123];
+		[data appendUInt16Big:65535];
+	} expect:@"<0000007b ffff>"];
+}
+
+- (void) testInt {
+	[self execute:^(id data) {
+		[data appendUInt32Big:0];
+		[data appendUInt32Big:123456];
+		[data appendUInt32Big:UINT_MAX];
+	} expect:@"<00000000 0001e240 ffffffff>"];
+}
+
+@end

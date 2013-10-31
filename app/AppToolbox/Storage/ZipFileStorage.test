@@ -1,0 +1,188 @@
+#import <GHUnit/GHUnit.h>
+
+#import "ZipFileStorage.h"
+#import "TestHelper.h"
+
+@interface ZipFileStorageTest : GHTestCase {
+	NSData *testData;
+	NSMutableDictionary *dataByFile;
+}
+
+@end
+
+NSString * const zipPath = @"/tmp/test.zip";
+
+@implementation ZipFileStorageTest
+
+- (void)setUp {
+	[[NSFileManager defaultManager] removeItemAtPath:zipPath error:nil];
+	testData = [@"YO" dataUsingEncoding:NSUTF8StringEncoding];
+	dataByFile = [NSMutableDictionary dictionary];
+}
+
+#pragma mark -
+#pragma mark Test Helper
+
+- (void) zip:(ZipFileStorage *)zip setData:(NSData *)data forPath:(NSString *)path {
+	[zip setData:data forPath:path];
+	[dataByFile setValue:data forKey:path];
+}
+
+- (void) validateZip:(ZipFileStorage *)zip {
+	for(int i = 1; i<=2; i++) {
+		for(NSString *path in dataByFile) {
+			GHAssertEqualObjects([dataByFile objectForKey:path], [zip dataForPath:path], @"data for %@", path);
+		}
+		[zip flush];
+	}
+}
+
+#pragma mark -
+#pragma mark Test cases
+
+- (void) testEquals {
+	ZipFileStorage *zip = [Fixtures testZip:@"test"];
+	GHAssertEqualObjects(zip, zip, nil);
+	GHAssertEqualObjects(zip, [Fixtures testZip:@"test"], nil);
+	GHAssertFalse([zip isEqual:[Fixtures testZip:@"example"]], nil);
+}
+
+// When a file does not exist in the ZIP, just return nil
+- (void) testNilForPathDoesntExist {
+	GHAssertNil([[Fixtures testZip:@"test"] dataForPath:@"nothere.txt"], @"nil for file that doesn't exist");
+}
+
+// Retrieve a file from a fixture ZIP file
+- (void) testDataForPath {
+	NSString *value = [[[Fixtures testZip:@"test"] dataForPath:@"test.html"] UTF8DataToString];
+	GHAssertEqualStrings(@"YES", value, @"file content");
+}
+
+// List all filenames in ZIP
+- (void) testListFiles {
+	NSArray *expected = [NSArray arrayWithObjects:@"index.json", @"test.html", @"test2.html", nil];
+	NSArray *actual = [[Fixtures testZip:@"test"] listFiles];
+	GHAssertEqualObjects(expected, actual, @"files");
+}
+
+// when the ZIP doesn't exist and is not to be created and the file is not found, an exception is thrown
+- (void) testExceptionWhenZipDoesntExist {
+	@try {
+		[[ZipFileStorage alloc] initWithPath:@"/tmp/nothere.txt" create:NO];
+		GHFail(@"Expected exception");
+	}
+	@catch (NSException *exception) {
+		// expected
+	}
+}
+
+// delete
+
+- (BOOL) tmpZipExists {
+	return [[NSFileManager defaultManager] fileExistsAtPath:[Fixtures tmpZipPath]];
+}
+
+- (void) testRemoveJustCreated {
+	GHAssertFalse([self tmpZipExists], nil);
+
+	ZipFileStorage *zip = [Fixtures tmpZipCreate:YES];
+	[zip setData:testData forPath:@"x"];
+	[zip remove];
+	[zip flush];
+
+	GHAssertFalse([self tmpZipExists], nil);
+}
+
+- (void) testRemoveExisting {
+	ZipFileStorage *zip = [Fixtures tmpZipCreate:YES];
+	[zip setData:testData forPath:@"x"];
+	[zip flush];
+
+	GHAssertTrue([self tmpZipExists], nil);
+
+	[zip setData:testData forPath:@"x"];
+	[zip remove];
+	[zip flush];
+
+	GHAssertFalse([self tmpZipExists], nil);
+}
+
+// dataForPath should return nil for a zip that is just to be created
+- (void) testDataForPathReturnsNilWhenZipToFileDoesntExistYet {
+	id<StorageContainer> zip = [[ZipFileStorage alloc] initWithPath:@"/tmp/nothere.zip" create:YES];
+	GHAssertNil([zip dataForPath:@"test.txt"], @"nil");
+}
+
+// store a file in the ZIP and check that it can be retrieved again
+- (void) testSetDataForPath {
+	NSString *filePath = @"http://www.example.org/test/hello.html";
+	ZipFileStorage *zip = [Fixtures tmpZipCreate:YES];
+
+	[self zip:zip setData:testData forPath:filePath];
+	[self validateZip:zip];
+	[zip flush];
+
+	zip = [Fixtures tmpZipCreate:NO];
+	[self validateZip:zip];
+}
+
+// store a file at a location where a folder exists already
+- (void) testFileLocationFolderConflict {
+	ZipFileStorage *zip = [Fixtures tmpZipCreate:YES];
+
+	[self zip:zip setData:testData forPath:@"foo/bar/index.html"];
+	[self zip:zip setData:testData forPath:@"foo/bar"];
+	[self zip:zip setData:testData forPath:@"foo/baz/"];
+
+	[self validateZip:zip];
+}
+
+// storing a path the 2nd time, the first version is overwritten
+- (void) testFileOverwrite {
+	ZipFileStorage *zip = [Fixtures tmpZipCreate:YES];
+
+	[zip setData:[@"123" dataUsingEncoding:NSUTF8StringEncoding] forPath:@"foo/bar/index.html"];
+	[self zip:zip setData:testData forPath:@"foo/bar/index.html"];
+
+	[self validateZip:zip];
+}
+
+// saving files with paths longer > 255 chars working correctly
+- (void) testZipFileLongNames {
+	ZipFileStorage *zip = [Fixtures tmpZipCreate:YES];
+
+	NSString *path = [@"" stringByPaddingToLength:300 withString:@"x" startingAtIndex:0];
+
+	[zip setData:[@"hello" dataUsingEncoding:NSUTF8StringEncoding ] forPath:path];
+	[zip flush];
+
+	GHAssertEqualStrings(@"hello", [[zip dataForPath:path] UTF8DataToString], nil);
+
+	GHAssertNil([[zip dataForPath:[@"" stringByPaddingToLength:300*300 withString:@"x" startingAtIndex:0]] UTF8DataToString], nil);
+}
+
+// URL protocol
+
+- (void) testURLForPath {
+	NSString *url = [[Fixtures testZip:@"test"] URLForPath:@"test.html"].absoluteString;
+	GHAssertEqualStrings(@"takeoff-test:///test.html", url, @"URLForPath");
+	[TestHelper expect:@"YES" inResponseForURLString:url];
+}
+
+// Deactivated because of GC
+/*
+- (void) testProtocolUnregistration {
+
+	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+
+	NSString *url = [[[Fixtures testZip:@"test"] URLForPath:@"test.html"].absoluteString retain];
+	[TestHelper expect:@"YES" inResponseForURLString:url];
+
+	[pool drain];
+
+	[TestHelper expectNilForURLString:url];
+	[url release];
+}
+*/
+
+@end

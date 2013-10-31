@@ -1,0 +1,13 @@
+PODS:
+  - OCMock (2.2.1)
+  - Reachability (3.1.1)
+
+DEPENDENCIES:
+  - OCMock (~> 2.2.1)
+  - Reachability
+
+SPEC CHECKSUMS:
+  OCMock: 80e4cfbc71a0e1bd28caf10a9fda27da7c4c8402
+  Reachability: 2be6bc2fd2bd31d97f5db33e75e4b29c79e95883
+
+COCOAPODS: 0.27.1

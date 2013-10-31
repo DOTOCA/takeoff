@@ -1,0 +1,6 @@
+source :rubygems
+
+gem 'rdoc'
+gem 'rdoc-takeoff'
+gem 'awesome_print'
+gem 'rubyzip'

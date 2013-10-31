@@ -1,0 +1,32 @@
+#import <GHUnit/GHUnit.h>
+
+#import "NSData+Utils.h"
+
+@interface NSDataUtilsTest : GHTestCase {
+	NSData *data;
+}
+
+@end
+
+@implementation NSDataUtilsTest
+
+- (void)setUp {
+	data = [NSData dataWithBytes:"abcde" length:5];
+}
+
+- (void) testHexString {
+	GHAssertEqualStrings(@"6162636465", [data hexString], @"hexString");
+}
+
+- (void) testSha1 {
+	GHAssertEqualStrings(@"03de6c570bfe24bfc328ccd7ca46b76eadaf4334", [data sha1], @"sha1");
+}
+
+- (void) testDataUTF8 {
+	NSString *string = @"äbc";
+	const char *bytes = [string UTF8String];
+	NSString *string2 = [[NSData dataWithBytes:bytes length:strlen(bytes)] UTF8DataToString];
+	GHAssertEqualStrings(string, string2, @"UTF8String");
+}
+
+@end

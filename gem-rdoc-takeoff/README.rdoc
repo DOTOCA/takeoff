@@ -1,0 +1,74 @@
+= Hanna Bootstrap — Twitter Bootstrap theme for RDoc
+
+Based on the original Hanna by Mislav, Hanna Nouveau by Erik.
+
+Hanna is an RDoc generator that scales. It's implemented in Haml, making the
+sources clean and readable. It's built with simplicity, beauty and ease of
+browsing in mind. (See more in {the
+wiki}[http://github.com/mislav/hanna/wikis/home].)
+
+Hanna gem is available from http://rubygems.org:
+
+    gem install rdoc-takeoff
+
+The template was created by {Atsushi Nagase}[http://ngs.io/] and since then
+has seen contributions from:
+
+== Usage
+
+    rdoc -o doc -f bootstrap lib/*.rb
+
+An alternative is to set the `RDOCOPT` environment variable:
+
+    RDOCOPT="-f bootstrap"
+
+This will make RDoc always use Hanna unless it is explicitly overridden.
+
+== Integrating with RubyGems
+
+Another neat trick is to put the following line in your .gemrc, this will make
+RubyGems use Hanna for all rdoc generation:
+
+    rdoc: -f bootstrap
+
+This will make RubyGems use Hanna when generating documentation for installed
+gems. Remember, if you wish to have all your gems be formatted in bootstrap:
+
+    gem rdoc --all --overwrite
+
+The first time. To easily browse your newly created documentation, use:
+
+    gem server
+
+== Rake task
+
+For repeated generation of API docs, it's better to set up a Rake task. Simply
+add the bootstrap format argument to your RDoc::Task options:
+
+    gem 'rdoc'
+    require 'rdoc/task'
+    RDoc::Task.new do |rdoc|
+      # this only works with RDoc 3.1 or greater
+      rdoc.generator = 'bootstrap'
+      # this is what you use pre RDoc 3.1:
+      rdoc.options.push '-f', 'bootstrap'
+    end
+
+Tip: you can do this in the Rakefile of your Rails project before running
+`rake doc:rails`.
+
+Here is an example of a task for the {rdbi
+library}[http://github.com/rdbi/rdbi/tree/master/Rakefile]:
+
+    gem 'rdoc'
+    require 'rdoc/task'
+    RDoc::Task.new do |rdoc|
+      version = File.exist?('VERSION') ? File.read('VERSION') : ""
+
+      rdoc.generator = 'bootstrap'
+      rdoc.main = 'README.rdoc'
+      rdoc.rdoc_dir = 'rdoc'
+      rdoc.title = "RDBI #{version} Documentation"
+      rdoc.rdoc_files.include('README*')
+      rdoc.rdoc_files.include('lib/**/*.rb')
+    end

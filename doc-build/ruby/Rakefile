@@ -1,0 +1,91 @@
+require 'rubygems'
+require 'bundler/setup'
+require 'rdoc/rdoc'
+require 'ap'
+require 'zip/zip'
+
+def index_visit_all_entries e, &block
+  if e.kind_of? Array
+    e.each do |elem| index_visit_all_entries(elem, &block) end
+  elsif e.kind_of? Hash
+    yield e
+    child_entries = e['entries'] and index_visit_all_entries(child_entries, &block)
+  end
+end
+
+def filename_without_ext path
+  File.basename(path, File.extname(path))
+end
+
+BASE = File.expand_path(File.dirname(__FILE__))
+VERSION = 'ruby-2.0.0-p247'
+
+RUBY_SRC = File.join BASE, 'src', VERSION
+RUBY_SRC_STDLIB = RUBY_SRC + '-stdlib'
+
+OUT = File.join BASE, 'out'
+OUT_FILES = File.join OUT, 'ruby'
+OUT_ZIP = File.join(OUT, 'ruby-2.0.takeoff')
+
+LIBRARY = File.expand_path('~/Library/Containers/de.ralfebert.TakeOff/Data/Library/Application Support/TakeOff/')
+
+Dir.chdir(RUBY_SRC_STDLIB)
+MODULE_PATHS = FileList.new("*/*") { |fl| fl.exclude(/Setup/, /README/, /-test-/) }
+  .group_by { |path| filename_without_ext path }
+
+#MODULE_PATHS.delete_if {|key, value| not %w{coverage erb}.include? key }
+
+desc 'Generate rdoc for ruby and stdlib'
+task :ruby_docs do
+  rdoc = RDoc::RDoc.new
+
+  Dir.chdir(RUBY_SRC_STDLIB)
+  MODULE_PATHS.each do |name, paths|
+    rdoc.document(['--debug', '-f', 'takeoff', '-o', "#{OUT_FILES}/#{name}/", '-x', "/sample/"].concat(paths))
+  end
+
+  Dir.chdir(RUBY_SRC)
+  rdoc.document(['--debug', '-f', 'takeoff', '-o', "#{OUT_FILES}/core/", './'])
+end
+
+desc 'Join out/ruby/*/index.json to out/ruby/index.json'
+task :index_json do
+  entries = []
+  
+  module_names = MODULE_PATHS.keys.sort
+  module_names.insert 0, 'core'
+  modules = module_names.each do |name|
+    index_json_path = File.join OUT_FILES, name, 'index.json'
+    if File.exist? index_json_path
+      index_json = ActiveSupport::JSON.decode(File.read(index_json_path))
+      index_visit_all_entries(index_json) do |e| if e['url'] then e['url'] = "/#{name}#{e['url']}" end end
+      if name == 'core'
+        entries.concat index_json['entries']
+      else
+        entries << index_json
+      end
+    end
+  end
+  
+  File.open(File.join(OUT_FILES, 'index.json'), 'w') do |f|
+    f << ActiveSupport::JSON.encode({ :title => "Ruby 2.0.0", :entries => entries, :source => 'https://github.com/ruby/ruby/blob/v2_0_0_247/' })
+  end
+end
+
+task :zip => [:index_json] do
+  FileUtils.rm OUT_ZIP if File.exist? OUT_ZIP
+  Zip::ZipFile.open(OUT_ZIP, Zip::ZipFile::CREATE) do |zipfile|
+    FileList["#{OUT_FILES}/**/*"].each do |path|
+      relpath = path.sub(OUT_FILES, '').gsub(/^\//, '')
+      zipfile.add relpath, path
+    end
+  end
+end
+
+task :install => [:zip] do
+  FileUtils.cp OUT_ZIP, LIBRARY
+end
+
+task :open_library do
+  `open "#{LIBRARY}"`
+end

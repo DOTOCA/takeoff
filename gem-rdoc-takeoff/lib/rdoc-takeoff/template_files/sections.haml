@@ -1,0 +1,78 @@
+- unless values[:entry].classes_and_modules.empty?
+  #class-list
+    %h2 Classes and Modules
+    %ul
+      - values[:entry].modules.sort.each do |mod|
+        %li
+          %span.type Module
+          = link_to mod.full_name, values[:entry].aref_to(mod.path)
+      - values[:entry].classes.sort.each do |mod|
+        %li
+          %span.type Class
+          = link_to mod.full_name, values[:entry].aref_to(mod.path)
+
+- values[:sections].sort_by{|s, h| s.title.to_s}.each do |section, h|
+  - constants, attributes, alias_types, method_types = h.values_at(:constants, :attributes, :alias_types, :method_types)
+  #section
+    - if section.title.to_s != ''
+      %h2
+        %a{ :name =>section.aref }= section.title
+        - if section.comment
+          .section-comment= section.description
+
+    - unless constants.empty?
+      #constants-list
+        %h2 Constants
+        .name-list
+          %table.table-striped.table{ :summary => "Constants" }
+            - constants.each do |const|
+              %tr.top-aligned-row.context-row
+                %th.context-item-name= const.name
+                %td =
+                %td.context-item-value= const.value
+                - if const.description then
+                  %td &nbsp;
+                  %td.context-item-desc= const.description
+
+    - unless attributes.empty?
+      #attribute-list
+        %h2.section-bar Attributes
+        .name-list
+          %table
+            - attributes.each do |attrib|
+              %tr.top-aligned-row.context-row
+                %td.context-item-name
+                  %a{:name => attrib.aref}=attrib.name
+                %td.context-item-value= attrib.rw ? "[#{attrib.rw}]" : '&nbsp;'
+                %td.context-item-desc~ sanitize_code_blocks(attrib.description)
+
+    - unless method_types.empty?
+      #methods
+        - method_types.each do |type, list|
+          - unless list.empty?
+            %article{ id: "#{type.downcase}-methods" }
+
+              - list.each do |method|
+                %a{ :name => method.aref }
+                %section.method{ :id => "method-#{method.aref}", :class => "#{type.gsub(/\s+/, '-')}".downcase }
+                  - if method.markup_code
+                    %a.source{ :href => "source:#{ method.file.full_name }" }
+
+                  - if method.call_seq
+                    %span.name
+                      - method.call_seq.split(/\r?\n/).each do |seq|
+                        %div.signature= seq.strip.gsub(/->/, '<span class="arrow"></span>')
+                  - else
+                    .signature= method.name + " " + method.params
+                    
+                  - if method.description
+                    .description
+                      ~ sanitize_code_blocks method.description
+
+    %h2 Files
+
+    %ul.files
+      - values[:entry].in_files.each do |tl|
+        %li
+          %a{ :href => "source:#{h tl.absolute_name }"}= h tl.absolute_name
+    

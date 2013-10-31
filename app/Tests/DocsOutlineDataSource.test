@@ -1,0 +1,64 @@
+#import "MainWindowController.h"
+#import "TestHelper.h"
+#import "DocsOutlineDelegate.h"
+#import "DocsOutlineDataSource.h"
+#import "Fixtures.h"
+#import "NSOutlineView+Additions.h"
+#import "Features.h"
+#import "TestDraggingInfo.h"
+
+@interface DocsOutlineDataSourceTest : GHTestCase {
+	DocsOutlineDataSource *dataSource;
+    DocsOutlineDelegate *delegate;
+	NSOutlineView *view;
+}
+
+@end
+
+@implementation DocsOutlineDataSourceTest
+
+- (void) setUp {
+	dataSource = [DocsOutlineDataSource new];
+	dataSource.library = [Library new];
+	view = [NSOutlineView new];
+	view.dataSource = dataSource;
+    delegate = [DocsOutlineDelegate new];
+	view.delegate = delegate;
+	[view addTableColumn:[[NSTableColumn alloc] initWithIdentifier:@"Title"]];
+}
+
+- (void) testOutlineStructure {
+	[dataSource.library addBook:[Fixtures testBook]];
+	[view reloadData];
+	[view expandAll];
+	GHAssertEqualStrings([TestHelper stringForTestResource:@"outline-test.txt"], [view columnValueString:@"Title"], nil);
+}
+
+- (void) testInitiallyEmpty {
+	GHAssertEquals((NSInteger)0, [view numberOfRows], @"numberOfChildrenOfItem");
+}
+
+- (void) validateOutlineDrag:(id)obj expectedOperation:(NSDragOperation)expectedOperation {
+	NSDragOperation result = [dataSource outlineView:view validateDrop:[TestDraggingInfo draggingInfoForObject:obj] proposedItem:nil proposedChildIndex:0];
+	GHAssertEquals((int)expectedOperation, (int)result, @"outline drop: %@", obj);
+}
+
+#ifdef FEATURE_DRAG_AND_DROP_IMPORT
+- (void) testValidateDrop {
+	[self validateOutlineDrag:[NSURL URLWithString:@"http://www.google.de"] expectedOperation:NSDragOperationCopy];
+	[self validateOutlineDrag:@"foo" expectedOperation:NSDragOperationNone];
+}
+#endif
+
+- (void) testUrlDropStartsDownload {
+	id url = [NSURL URLWithString:@"http://www.example.org/"];
+
+	id library = [OCMockObject mockForClass:[Library class]];
+	dataSource.library = library;
+
+	[[library expect] downloadUrl:url];
+	[dataSource outlineView:view acceptDrop:[TestDraggingInfo draggingInfoForObject:url] item:nil childIndex:0];
+	[library verify];
+}
+
+@end

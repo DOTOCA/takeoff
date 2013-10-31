@@ -1,0 +1,5 @@
+doc-build/*/src
+doc-build/*/out
+.DS_Store
+Pods
+xcuserdata

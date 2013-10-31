@@ -1,0 +1,195 @@
+#import <GHUnit/GHUnit.h>
+
+#import "Library.h"
+#import "LocalStubURLProtocol.h"
+#import "Benchmark.h"
+
+@interface LibraryTest : GHAsyncTestCase {
+	Library *library;
+	NSString *bookPath;
+}
+
+@end
+
+@implementation LibraryTest
+
+enum {
+	AllBooksChanged = 100,
+};
+
+- (void) setUp {
+	[Fixtures clear];
+	[LocalStubURLProtocol registerProtocol];
+	library = [Library new];
+	[library addObserver:self forKeyPath:@"entries" options:NSKeyValueObservingOptionNew context:nil];
+	bookPath = [Fixtures takeoffZipPath];
+}
+
+- (void) tearDown {
+	[library removeObserver:self forKeyPath:@"entries"];
+	library = nil;
+	[Fixtures clear];
+}
+
+- (void) testInitialState {
+	GHAssertEquals(LibraryStateBrowser, library.state, nil);
+}
+
+- (void) observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context {
+	if (object==library && [keyPath isEqualToString:@"entries"]) {
+		[self notify:AllBooksChanged];
+	}
+}
+
+- (void) testBooksRegistersProtocol {
+	[TestHelper expectNilForURLString:@"takeoff-test:/test.html"];
+	[library addBook:[Fixtures testBook]];
+	[library waitUntilAllBooksLoaded];
+	[TestHelper expect:@"YES" inResponseForURLString:@"takeoff-test:/test.html"];
+}
+
+- (void) testBooksUnregistersProtocolOnRelease {
+	[self testBooksRegistersProtocol];
+	[self tearDown];
+	[TestHelper expectNilForURLString:@"takeoff-test:test.html"];
+}
+
+- (void) testAddBook {
+	Book* book = [Fixtures testBook];
+	[library addBook:book];
+	GHAssertEqualObjects(library.entries, [NSArray arrayWithObject:book], @"book");
+	GHAssertEquals(BookStateAvailable, book.state, nil);
+	[library addBook:book];
+	GHAssertEqualObjects(library.entries, [NSArray arrayWithObject:book], @"book");
+}
+
+- (void) testAddBookFilter {
+	[library filter:@"coffee"];
+	[library addBook:[Fixtures testBook]];
+	GHAssertEqualObjects([TestHelper stringForTestResource:@"Library-coffee.txt"], library.debugString, nil);
+}
+
+- (void) testLoadBook {
+	[library loadBook:bookPath];
+	Book *book = [library.entries objectAtIndex:0];
+	GHAssertEqualObjects(@"Example Book", book.title, @"book");
+	GHAssertEquals(BookStateActive, book.state, nil);
+}
+
+- (void) testUidForUrl {
+	GHAssertEqualStrings([Library archivePathByUrl:[NSURL URLWithString:@"http://www.google.de/"]], [Library archivePathByUrl:[NSURL URLWithString:@"http://www.google.de/"]], @"equal url");
+	GHAssertNotEqualStrings([Library archivePathByUrl:[NSURL URLWithString:@"http://www.google.de/"]], [Library archivePathByUrl:[NSURL URLWithString:@"http://www.example.org/"]], @"different url");
+}
+
+- (void) testBookAbsoluteURL {
+	Book *book = [Fixtures testBook];
+	[library addBook:book];
+	GHAssertEqualObjects([NSURL URLWithString:@"takeoff-test:///test.html"], [book entryForTitlePath:@"Test"].absoluteURL, @"url");
+}
+
+- (void) testOnlyBooksVisibleInAddState {
+	[library addBook:[Fixtures testBook]];
+	[library addBook:[Fixtures testBook:@"example2"]];
+
+	library.state = LibraryStateAdd;
+
+	GHAssertEqualStrings(@"Library\n\tExample Book\n\tExample page", library.debugString, nil);
+
+	[library filter:@"page"];
+	GHAssertEqualStrings(@"Library\n\tExample page", library.debugString, nil);
+
+	library.state = LibraryStateBrowser;
+
+	GHAssertEqualStrings([TestHelper stringForTestResource:@"Library-full.txt"], library.debugString, nil);
+}
+
+- (void) testHandleUninstall {
+	id storage = [OCMockObject mockForProtocol:@protocol(StorageContainer)];
+	Book *book = [[Book alloc] initWithBareStorage:storage];
+
+	GHAssertEquals(book.state, BookStateNone, nil);
+	[library addBook:book];
+	[book activate];
+	GHAssertEquals(book.state, BookStateActive, nil);
+	[library addBook:[Fixtures testBook:@"example2"]];
+
+	[library handleLibraryChanges:nil];
+	[library toggleAdd];
+
+	[book setIncluded:NO];
+	GHAssertEquals(book.state, BookStateUninstallRequested, nil);
+
+	[[storage expect] remove];
+	[library handleLibraryChanges:nil];
+	[library toggleAdd];
+
+	GHAssertNil(book.parent, nil);
+	GHAssertEquals(book.state, BookStateNone, nil);
+	[storage verify];
+}
+
+- (void) testEntryForAbsoluteURLBenchmark {
+	[library waitUntilAllBooksLoaded];
+	LogDebug(@"Ready");
+
+	double avgDuration = [Benchmark run:^(int i){
+		return (int)([library entryForAbsoluteURL:[NSURL URLWithString:@"takeoff-test:///noteveninthetree"]] != nil);
+	} times:50];
+
+	GHAssertLessThan(avgDuration, (double)0.1, @"Search time 100ms max");
+}
+
+- (void) testAvailableBooksByProvider {
+	// Here we have an already installed book
+	Book *installedBook = [Fixtures testBook];
+	[library addBook:installedBook];
+	[installedBook activate];
+
+	// and two new books
+	Book *newBook = [Book new];
+	[newBook setTitle:@"New Book"];
+	newBook.storage = [Fixtures storageMock];
+
+	Book *newBook2 = [Book new];
+	newBook2.title = @"New Book 2";
+	newBook2.storage = [Fixtures storageMock];
+
+	// all these are available via a book provider
+
+	id provider = [OCMockObject mockForProtocol:@protocol(BookProvider)];
+	[[[provider expect] andReturn:[NSArray arrayWithObjects:newBook, newBook2, installedBook, nil]] availableBooks];
+	[library.bookProvider addObject:provider];
+
+	// and when we switch to the add mode
+	[library handleLibraryChanges:nil];
+	[library toggleAdd];
+
+	// the new and installed books should be in the library
+	NSArray *libraryEntries = [NSArray arrayWithObjects:installedBook, newBook, newBook2, nil];
+	GHAssertEqualObjects(libraryEntries, library.entries, nil);
+
+	// installed book is installed
+	GHAssertEquals(BookStateActive, installedBook.state, nil);
+	GHAssertTrue(installedBook.included, nil);
+
+	// new book is available.
+	GHAssertEquals(BookStateAvailable, newBook.state, nil);
+	GHAssertFalse(newBook.included, nil);
+
+	// Then, install new book
+	newBook.included = YES;
+
+	// and switch back to the library
+	[library handleLibraryChanges:nil];
+	[library toggleAdd];
+
+	// the installed books should be in the library
+	libraryEntries = [NSArray arrayWithObjects:installedBook, newBook, nil];
+	GHAssertEqualObjects(libraryEntries, library.entries, nil);
+
+	// newBook should be installed message
+	GHAssertEquals(BookStateActive, newBook.state, nil);
+
+}
+
+@end

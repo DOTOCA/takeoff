@@ -1,0 +1,51 @@
+#import <GHUnit/GHUnit.h>
+
+#import "FileStorage.h"
+#import "TestHelper.h"
+
+@interface FileStorageTest : GHTestCase {
+	id<StorageContainer> storage;
+}
+
+@end
+
+@implementation FileStorageTest
+
+- (void)setUp {
+	storage = [FileStorage storageWithPath:[TestHelper pathForTestResource:@"the-internet"]];
+}
+
+#pragma mark -
+#pragma mark Test cases
+
+- (void) testEquals {
+	GHAssertEqualObjects(storage, storage, nil);
+	GHAssertEqualObjects(storage, [FileStorage storageWithPath:[TestHelper pathForTestResource:@"the-internet"]], nil);
+	GHAssertFalse([storage isEqual:[FileStorage storageWithPath:@"/tmp"]], nil);
+}
+
+// When a file does not exist, just return nil
+- (void) testNilForPathDoesntExist {
+	GHAssertNil([storage dataForPath:@"nothere.txt"], @"nil for file that doesn't exist");
+}
+
+// Retrieve a file
+- (void) testDataForPath {
+	NSString *value = [[storage dataForPath:@"www.example.org/test/test.html"] UTF8DataToString];
+	GHAssertNotNil(value, @"dataForPath returned nil");
+	GHAssertTrue([value rangeOfString:@"Example page"].location != NSNotFound, @"file content %@", value);
+}
+
+// URL protocol
+
+- (void) testURLForPath {
+	NSURL *url = [storage URLForPath:@"www.example.org/test/test.html"];
+	[TestHelper expect:@"Example page" inResponseForURLString:url.absoluteString];
+}
+
+- (void) testURLForPathWithFragment {
+	NSURL *url = [storage URLForPath:@"www.example.org/test/test.html#here"];
+	[TestHelper expect:@"Example page" inResponseForURLString:url.absoluteString];
+}
+
+@end

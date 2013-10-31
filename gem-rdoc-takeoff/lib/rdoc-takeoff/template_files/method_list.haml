@@ -1,0 +1,37 @@
+- entry = values[:entry]
+- sections = values[:sections].keys if values.has_key?(:sections)
+
+- if entry.requires or sections or entry.includes
+  #context
+    - unless entry.requires.empty?
+      - no_content = false
+      %section#requires
+        %h2 Required files
+        %ol
+          - entry.requires.each do |req|
+            %li= req.name
+
+    - if sections && (sections.length > 1 || sections.first.title.to_s != '')
+      - no_content = false
+      %section#contents
+        %h2 Contents
+        %ol
+          - sections.sort_by{|s| s.title.to_s}.each do |section|
+            %li= link_to section.title, "##{section.aref}"
+
+    %p
+      - unless entry.includes.empty?
+        - no_content = false
+        #includes
+          Includes
+          = entry.includes.collect { |inc| if (mod = inc.module).is_a?(String) then inc.name else link_to inc.name, entry.aref_to(mod.path) end }.join(', ')
+
+      - if entry.respond_to? :type and entry.type == 'class' and entry.superclass
+        - superclass_name = if (String === entry.superclass) then entry.superclass else entry.superclass.full_name end
+        - if superclass_name != 'Object'
+          #extends
+            Extends
+            - if not String === entry.superclass
+              = link_to superclass_name, entry.aref_to(entry.superclass.path)
+            - else
+              = superclass_name

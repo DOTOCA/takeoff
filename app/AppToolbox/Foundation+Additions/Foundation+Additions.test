@@ -1,0 +1,58 @@
+#import <GHUnit/GHUnit.h>
+#import "Foundation+Additions.h"
+
+typedef NSString * (^StringMapping)(NSString *);
+
+@interface FoundationAdditionsTest : GHTestCase {
+	NSMutableArray *a123;
+	StringMapping dasherize;
+}
+
+@end
+
+@implementation FoundationAdditionsTest
+
+- (void) setUp {
+	a123 = [NSMutableArray arrayWithObjects:@"1", @"2", @"3", nil];
+	dasherize = ^(NSString *s){ return [NSString stringWithFormat:@"-%@-", s]; };
+}
+
+- (void) testStringTimes {
+	GHAssertEqualStrings(@"xyzxyzxyz", [@"xyz" times:3], @"times");
+}
+
+- (void) testStringTrim {
+	GHAssertEqualStrings(@"hello", [@" \t\nhello   " trim], @"trim");
+}
+
+- (void) testArrayMap {
+	NSArray *original = [a123 copy];
+	NSArray *actual = [a123 map:dasherize];
+	NSArray *expected = [NSArray arrayWithObjects:@"-1-", @"-2-", @"-3-", nil];
+	GHAssertEqualObjects(actual, expected, @"equal objects");
+	GHAssertEqualObjects(original, a123, @"equal objects");
+}
+
+- (void) testArraySelect {
+	NSArray *actual = [a123 select:^(NSString *s){ return (BOOL)![s isEqualToString:@"2"]; }];
+	NSArray *expected = [NSArray arrayWithObjects:@"1", @"3", nil];
+	GHAssertEqualObjects(actual, expected, @"equal objects");
+}
+
+- (void) testArrayFind {
+	GHAssertEqualObjects(@"1", [a123 find:^(NSString *s){ return (BOOL)![s isEqualToString:@"2"]; }], nil);
+}
+
+- (void) testArrayLast {
+	GHAssertEqualObjects(@"2", [a123 last:^(NSString *s){ return (BOOL)![s isEqualToString:@"3"]; }], nil);
+}
+
+- (void) testURLByRemovingFragment {
+	GHAssertEqualObjects([NSURL URLWithString:@"http://www.example.org/test.html"], [[NSURL URLWithString:@"http://www.example.org/test.html#fragment"] URLByRemovingFragment], @"url fragment");
+	GHAssertEqualObjects([NSURL URLWithString:@"http://www.example.org/test/"], [[NSURL URLWithString:@"http://www.example.org/test/#fragment"] URLByRemovingFragment], @"url fragment");
+	GHAssertEqualObjects([NSURL URLWithString:@"http://www.example.org/test"], [[NSURL URLWithString:@"http://www.example.org/test#fragment"] URLByRemovingFragment], @"url fragment");
+	GHAssertEqualObjects([NSURL URLWithString:@"http://www.example.org/"], [[NSURL URLWithString:@"http://www.example.org/#fragment"] URLByRemovingFragment], @"url fragment");
+	GHAssertEqualObjects([NSURL URLWithString:@"http://www.example.org/"], [[NSURL URLWithString:@"http://www.example.org/"] URLByRemovingFragment], @"url fragment");
+}
+
+@end

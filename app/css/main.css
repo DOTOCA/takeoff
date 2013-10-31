@@ -1,0 +1,121 @@
+body {
+  background-color: #f7f7f5;
+  margin: 0px 50px 10px 50px;
+  font-size: 100%;
+  line-height: 1.5; }
+
+body, tt, code {
+  font-family: Georgia; }
+
+tt, code {
+  font-style: italic; }
+
+h1, h2, h3 {
+  background-color: #ffbf00;
+  font-weight: normal;
+  font-size: 100%;
+  display: table;
+  padding: 5px 15px 3px 49px;
+  margin-left: -50px;
+  margin-bottom: 20px;
+  margin-top: 2.5em; }
+
+h4 {
+  margin-top: 0.5em;
+  margin-bottom: 0em; }
+
+a {
+  color: black; }
+
+.method {
+  padding-top: 2.5em; }
+  .method .signature {
+    font-size: 130%;
+    background: #f1ecdf url(method.png) 27px 11px no-repeat;
+    margin-left: -50px;
+    padding: 5px 15px 3px 49px;
+    display: table;
+    margin-bottom: -6px; }
+    .method .signature + .signature {
+      margin-top: 0.4em; }
+    .method .signature .arg, .method .signature .returns {
+      background: white;
+      padding: 4px 16px 4px 12px;
+      border-radius: 6px;
+      box-shadow: 1px 1px 2px #cccac6;
+      font-size: 65%;
+      color: #231f20;
+      background-color: white; }
+    .method .signature small {
+      color: #999999; }
+  .method .source {
+    position: absolute;
+    right: 46px;
+    margin-top: 5px;
+    background: url("source.png") 4px 3px no-repeat;
+    width: 24px;
+    height: 24px; }
+  .method h1, .method h2, .method h3 {
+    background: none;
+    font-weight: bold; }
+
+h1 + .method, h1 + a + .method {
+  padding-top: 0; }
+
+.arrow {
+  width: 16px;
+  height: 16px;
+  background: url("arrow.png") no-repeat 1px 8px;
+  display: inline-block;
+  margin-left: 5px; }
+
+li {
+  list-style-type: none; }
+
+li:before {
+  content: "-";
+  position: absolute;
+  margin-left: -15px; }
+
+ul.files {
+  margin-left: -18px;
+  list-style-image: url("source.png"); }
+  ul.files li:before {
+    content: ""; }
+
+dl.constants, dl.attributes {
+  list-style-image: url("listitem.png"); }
+  dl.constants dt, dl.attributes dt {
+    display: list-item;
+    margin-top: 0.5em; }
+
+pre {
+  font-size: 90%;
+  background: white;
+  padding: 15px 20px;
+  box-shadow: 1px 1px 4px #cccac6;
+  overflow: scroll; }
+
+hr {
+  margin: 2.5em -50px 1em;
+  right: 0;
+  height: 1px;
+  border: 0px;
+  border-bottom: 1px solid white;
+  background-color: #e2e2e2; }
+
+table td {
+  vertical-align: top;
+  padding-right: 15px; }
+
+table.propinfo td:first-child {
+  min-width: 100px; }
+
+.navbar, .subtoc {
+  display: none; }
+
+table.rdoc-list {
+  background: white;
+  box-shadow: 1px 1px 2px #cccac6;
+  padding-left: 15px;
+  padding-top: 15px; }

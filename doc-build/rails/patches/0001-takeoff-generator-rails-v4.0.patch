@@ -1,0 +1,55 @@
+From 612558d4458829d105f5149aea8282d23ac9791a Mon Sep 17 00:00:00 2001
+From: Ralf Ebert <ralf@ralfebert.de>
+Date: Sat, 17 Aug 2013 22:17:10 +0200
+Subject: [PATCH] takeoff generator rails v4.0
+
+---
+ Rakefile                       |  1 -
+ railties/lib/rails/api/task.rb | 10 ++++------
+ 2 files changed, 4 insertions(+), 7 deletions(-)
+
+diff --git a/Rakefile b/Rakefile
+index 177765f..5e87dbb 100644
+--- a/Rakefile
++++ b/Rakefile
+@@ -1,4 +1,3 @@
+-require 'sdoc'
+ require 'net/http'
+ 
+ $:.unshift File.expand_path('..', __FILE__)
+diff --git a/railties/lib/rails/api/task.rb b/railties/lib/rails/api/task.rb
+index c829873..4f5876d 100644
+--- a/railties/lib/rails/api/task.rb
++++ b/railties/lib/rails/api/task.rb
+@@ -1,4 +1,5 @@
+ require 'rdoc/task'
++require 'rdoc-takeoff'
+ 
+ module Rails
+   module API
+@@ -81,19 +82,16 @@ module Rails
+       end
+ 
+       def load_and_configure_sdoc
+-        require 'sdoc'
++        require 'rdoc-takeoff'
+ 
+         self.title    = 'Ruby on Rails API'
+-        self.rdoc_dir = api_dir
++        self.rdoc_dir = '../../out/rails/'
+ 
+         options << '-m'  << api_main
+         options << '-e'  << 'UTF-8'
+ 
+-        options << '-f'  << 'sdoc'
++        options << '-f'  << 'takeoff'
+         options << '-T'  << 'rails'
+-      rescue LoadError
+-        $stderr.puts %(Unable to load SDoc, please add\n\n    gem 'sdoc', require: false\n\nto the Gemfile.)
+-        exit 1
+       end
+ 
+       def configure_rdoc_files
+-- 
+1.8.2
+

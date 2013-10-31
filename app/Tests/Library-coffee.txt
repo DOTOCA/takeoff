@@ -1,0 +1,6 @@
+Library
+	Example Book
+		[i] Entry with children => entry_2.html
+			[i] Entry 2.3 blue
+				[i] Entry 2.3.1 cars => #2.3.1
+					[i] Entry 2.3.1.1 coffeecup => #2.3.1.1

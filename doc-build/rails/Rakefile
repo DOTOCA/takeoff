@@ -1,0 +1,45 @@
+require 'rubygems'
+require 'rdoc/rdoc'
+require 'zip/zip'
+
+BASE = File.expand_path(File.dirname(__FILE__))
+#VERSION = 'ruby-1.9.3-p374'
+
+RAILS_SRC = File.join BASE, 'src', 'rails'
+
+OUT = File.join BASE, 'out'
+OUT_FILES = File.join OUT, 'rails'
+OUT_ZIP = File.join(OUT, 'rails-3.2.takeoff')
+
+LIBRARY = File.expand_path('~/Library/Containers/de.ralfebert.TakeOff/Data/Library/Application Support/TakeOff/')
+
+# important: rails docs need to be generated via Rails Rakefile first
+
+task :index_json do
+  index_json_path = File.join(OUT_FILES, 'index.json')
+  index_json = ActiveSupport::JSON.decode(File.read(index_json_path))
+  index_json[:title] = "Rails 3.2.14"
+  index_json[:source] = "http://github.com/rails/rails/blob/v3.2.14/"
+  
+  File.open(index_json_path, 'w') do |f|
+    f << ActiveSupport::JSON.encode(index_json)
+  end
+end
+
+task :zip => [:index_json] do
+  FileUtils.rm OUT_ZIP if File.exist? OUT_ZIP
+  Zip::ZipFile.open(OUT_ZIP, Zip::ZipFile::CREATE) do |zipfile|
+    FileList["#{OUT_FILES}/**/*"].each do |path|
+      relpath = path.sub(OUT_FILES, '').gsub(/^\//, '')
+      zipfile.add relpath, path
+    end
+  end
+end
+
+task :install => [:zip] do
+  FileUtils.cp OUT_ZIP, LIBRARY
+end
+
+task :open_library do
+  `open "#{LIBRARY}"`
+end

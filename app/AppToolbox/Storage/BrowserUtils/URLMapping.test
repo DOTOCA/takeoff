@@ -1,0 +1,64 @@
+#import <GHUnit/GHUnit.h>
+
+#import "URLMapping.h"
+
+@interface URLMappingTest : GHTestCase {}
+
+@end
+
+@implementation URLMappingTest
+
+- (void) publicURL:(NSString *)publicURLString toTakeOffURL:(NSString *)takeOffURLString toPath:(NSString *)path inBook:(NSString *)bookName {
+
+	NSURL *publicURL = [NSURL URLWithString:publicURLString];
+	NSURL *takeOffURL = [NSURL URLWithString:takeOffURLString];
+
+	GHAssertEqualStrings(path, [URLMapping pathForURL:takeOffURL], @"pathForURL");
+	GHAssertEqualObjects(takeOffURL, [URLMapping takeoffURLForPath:path inBookNamed:bookName], @"takeoffURLForPath:path ");
+	GHAssertEqualStrings(bookName, [URLMapping bookNameForURL:takeOffURL], @"bookNameForURL:takeOffURL");
+	if (publicURL) {
+		GHAssertEqualObjects(publicURL, [URLMapping publicURLForURL:takeOffURL], @"publicURLForURL:takeOffURL");
+		GHAssertEqualObjects(publicURL, [URLMapping publicURLForPath:path], @"publicURLForPath:path]");
+		GHAssertEqualObjects(takeOffURL, [URLMapping takeoffURLForPublicURL:publicURL inBookNamed:bookName], @"takeoffURLForPublicURL");
+		GHAssertEqualStrings(path, [URLMapping pathForURL:publicURL], @"pathForURL:publicURL");
+	}
+}
+
+- (void) testPublicUrl {
+	[self publicURL:@"http://www.example.org/test/index.html" toTakeOffURL:@"takeoff-test://http-www.example.org/test/index.html" toPath:@"http-www.example.org/test/index.html" inBook:@"test"];
+}
+
+- (void) testSlashSuffix {
+	[self publicURL:@"http://www.example.org/test/" toTakeOffURL:@"takeoff-test://http-www.example.org/test/" toPath:@"http-www.example.org/test/" inBook:@"test"];
+}
+
+- (void) testDomainOnly {
+	[self publicURL:@"http://www.example.org/" toTakeOffURL:@"takeoff-test-1.2.3://http-www.example.org/" toPath:@"http-www.example.org/" inBook:@"test-1.2.3"];
+	[self publicURL:@"http://www.example.org" toTakeOffURL:@"takeoff-test://http-www.example.org" toPath:@"http-www.example.org" inBook:@"test"];
+}
+
+- (void) testArchiveUrls {
+	[self publicURL:nil toTakeOffURL:@"takeoff-test:/test/index.html" toPath:@"/test/index.html" inBook:@"test"];
+	[self publicURL:nil toTakeOffURL:@"takeoff-test:/index.html" toPath:@"/index.html" inBook:@"test"];
+}
+
+- (void) testPathWithoutSlash {
+	// URLs without a slash in the beginning do not resolve relative URLs in the browser, so a slash is added
+	GHAssertEqualObjects([NSURL URLWithString:@"takeoff-test:/test/index.html"], [URLMapping takeoffURLForPath:@"test/index.html" inBookNamed:@"test"], @"path");
+	GHAssertEqualObjects([NSURL URLWithString:@"takeoff-test:/index.html"], [URLMapping takeoffURLForPath:@"index.html" inBookNamed:@"test"], @"path");
+}
+
+- (void) testURLMappingBlock {
+	URLMappingBlock mapping = [URLMapping urlMapperForStorage:[Fixtures testZip:@"the-internet"]];
+
+	NSURL *url = [NSURL URLWithString:@"takeoff-the-internet://http-www.example.org/test.html"];
+	GHAssertEquals(url, mapping(url), @"path");
+	GHAssertEqualObjects([NSURL URLWithString:@"takeoff-the-internet://http-www.example.org/test.html"], mapping([NSURL URLWithString:@"http://www.example.org/test.html"]), @"path");
+}
+
+- (void) testPublicURLForUrl {
+	NSURL *url = [NSURL URLWithString:@"http://www.google.de/"];
+	GHAssertEqualObjects(url, [URLMapping publicURLForURL:url], @"url was already public");
+}
+
+@end

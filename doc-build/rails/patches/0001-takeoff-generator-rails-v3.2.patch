@@ -1,0 +1,38 @@
+From 522163f51b114a9d347e6d0a246030e7c02cf340 Mon Sep 17 00:00:00 2001
+From: Ralf Ebert <ralf@ralfebert.de>
+Date: Sat, 17 Aug 2013 22:21:39 +0200
+Subject: [PATCH] takeoff generator rails v3.2
+
+---
+ Rakefile | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/Rakefile b/Rakefile
+index 03b8a95..cb487ce 100755
+--- a/Rakefile
++++ b/Rakefile
+@@ -1,7 +1,7 @@
+ #!/usr/bin/env rake
+ 
+ require 'rdoc/task'
+-require 'sdoc'
++require 'rdoc-takeoff'
+ require 'net/http'
+ 
+ $:.unshift File.expand_path('..', __FILE__)
+@@ -89,10 +89,10 @@ RDoc::Task.new do |rdoc|
+     rdoc.rdoc_files.include(RDOC_MAIN)
+   end
+ 
+-  rdoc.rdoc_dir = 'doc/rdoc'
++  rdoc.rdoc_dir = '../../out/rails/'
+   rdoc.title    = "Ruby on Rails Documentation"
+ 
+-  rdoc.options << '-f' << 'sdoc'
++  rdoc.options << '-f' << 'takeoff'
+   rdoc.options << '-T' << 'rails'
+   rdoc.options << '-e' << 'UTF-8'
+   rdoc.options << '-g' # SDoc flag, link methods to GitHub
+-- 
+1.8.2
+

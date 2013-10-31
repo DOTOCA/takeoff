@@ -1,0 +1,4 @@
+@interface ColorGradientView : NSView {
+}
+
+@end

@@ -1,0 +1,58 @@
+#import <GHUnit/GHUnit.h>
+
+#import "StorageURLProtocol.h"
+#import "Library.h"
+#import "TestHelper.h"
+
+@interface StorageURLProtocolTest : GHTestCase {
+}
+@end
+
+@implementation StorageURLProtocolTest
+
+#pragma mark
+#pragma mark Test setup
+
+- (void) tearDown {
+	[StorageURLProtocol unregisterProtocol];
+}
+
+#pragma mark
+#pragma mark Test cases
+
+- (void) testUrlNil {
+	[TestHelper expectNilForURLString:@"takeoff-test:test.html"];
+	[TestHelper expectNilForURLString:@"takeoff-test:/takeoff/main.css"];
+}
+
+- (void) testLoadViaProtocol {
+	[StorageURLProtocol registerStorage:[Fixtures storageMock] forScheme:@"takeoff-test"];
+	[TestHelper expect:@"YES" inResponseForURLString:@"takeoff-test:/test.html"];
+	[TestHelper expect:@"YES" inResponseForURLString:@"takeoff-test:/test.html#fragment"];
+}
+
+- (void) testMultipleRegistration {
+	[StorageURLProtocol registerStorage:[OCMockObject mockForProtocol:@protocol(StorageContainer)] forScheme:@"takeoff-test"];
+	[StorageURLProtocol registerStorage:[Fixtures storageMock] forScheme:@"takeoff-test"];
+	[TestHelper expect:@"YES" inResponseForURLString:@"takeoff-test:/test.html"];
+}
+
+- (void) testLoadCSSResource {
+	[StorageURLProtocol registerStorage:[Fixtures storageMock] forScheme:@"takeoff-test"];
+	[TestHelper expect:@"Georgia" inResponseForURLString:@"takeoff-test:/takeoff/main.css"];
+}
+
+- (void) testUnregisterProtocol {
+	[self testLoadViaProtocol];
+	[StorageURLProtocol unregisterProtocol];
+	[TestHelper expectNilForURLString:@"takeoff-test:/test.html"];
+}
+
+- (void) testUnregister {
+	[StorageURLProtocol registerStorage:nil forScheme:@"takeoff-test"];
+	[self testLoadViaProtocol];
+	[StorageURLProtocol registerStorage:nil forScheme:@"takeoff-test"];
+	[TestHelper expectNilForURLString:@"takeoff-test:/test.html"];
+}
+
+@end

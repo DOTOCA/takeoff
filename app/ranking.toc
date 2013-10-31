@@ -1,0 +1,6 @@
+Test
+	StringScanner
+	String
+	StringFoo
+	ZZStringNotReally
+	AAStringNotReally

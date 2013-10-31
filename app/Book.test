@@ -1,0 +1,84 @@
+#import "Book.h"
+#import "Library.h"
+#import "ZipFileStorage.h"
+#import "TestHelper.h"
+#import "DocSet.h"
+
+@interface BookTest : GHTestCase {
+	Book *book;
+}
+
+@end
+
+@implementation BookTest
+
+- (void) setUp {
+	book = [Fixtures testBook];
+}
+
+- (void) testEquals {
+	GHAssertEqualObjects(book, book, nil);
+	GHAssertEqualObjects(book, [Fixtures testBook], nil);
+	GHAssertFalse([book isEqual:[Fixtures testBook:@"example"]], nil);
+}
+
+- (void) testInitialState {
+	GHAssertEquals(BookStateNone, book.state, nil);
+}
+
+- (void) testStoragePresent {
+	GHAssertEqualStrings(@"YES", [[book.storage dataForPath:@"/test.html"] UTF8DataToString], @"file content");
+}
+
+- (void) testTitle {
+	GHAssertEqualStrings(@"Example Book", book.title, @"book title");
+}
+
+- (void) testOutlineUrl {
+	Entry *firstEntry = [book.entries objectAtIndex:0];
+
+	NSString *url = firstEntry.absoluteURL.absoluteString;
+	GHAssertEqualStrings(@"takeoff-test:///test.html", url, @"book url");
+
+	Library *library = [Library new];
+	[library addBook:book];
+	[TestHelper expect:@"YES" inResponseForURLString:url];
+}
+
+- (void) testURL {
+	Entry *entry = [book entryForTitlePath:@"Test"];
+	GHAssertEqualObjects([NSURL URLWithString:@"takeoff-test:///test.html"], entry.absoluteURL, @"url");
+	GHAssertNil([[Fixtures testBook] entryForTitlePath:@"entrywithouturl"].absoluteURL, @"url");
+}
+
+- (void) testDictionary {
+	GHAssertEqualStrings(@"Book", [book.dictionary objectForKey:@"class"], nil);
+}
+
+- (void) testBookClassKept {
+	DocSet *docSet = [[DocSet alloc] initWithBareStorage:[Fixtures tmpZipCreate:YES]];
+	[docSet updateIndex];
+	Book *b = [Book loadFromStorage:[Fixtures tmpZipCreate:NO]];
+	GHAssertEqualStrings([DocSet className], b.className, nil);
+}
+
+- (void) testIncludedStateTransitions {
+	GHAssertEquals(BookStateNone, book.state, nil);
+	book.parent = [Library new];
+	GHAssertEquals(BookStateAvailable, book.state, nil);
+	GHAssertFalse(book.included, nil);
+	book.included = YES;
+	GHAssertEquals(BookStateInstallRequested, book.state, nil);
+	GHAssertTrue(book.included, nil);
+	book.included = NO;
+	GHAssertEquals(BookStateAvailable, book.state, nil);
+	[book activate];
+	GHAssertEquals(BookStateActive, book.state, nil);
+	GHAssertTrue(book.included, nil);
+	book.included = NO;
+	GHAssertEquals(BookStateUninstallRequested, book.state, nil);
+	book.included = YES;
+	GHAssertEquals(BookStateActive, book.state, nil);
+}
+
+@end

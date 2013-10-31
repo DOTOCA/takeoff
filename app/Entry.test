@@ -1,0 +1,270 @@
+#import <GHUnit/GHUnit.h>
+
+#import "Entry.h"
+
+@interface EntryTest : GHTestCase {
+	Book *root;
+	Entry *e1, *e2, *e21, *e22, *e23, *e231, *e2311, *e2312;
+}
+
+@end
+
+@implementation EntryTest
+
+- (void) setUp {
+	root = [Fixtures testBook];
+	GHAssertNotNil(e1 = [root entryForTitlePath:@"Test"], @"e1");
+	GHAssertNotNil(e2 = [root entryForTitlePath:@"Entry with children"], @"e2");
+	GHAssertNotNil(e21 = [root entryForTitlePath:@"Entry with children/Test red"], @"e21");
+	GHAssertNotNil(e22 = [root entryForTitlePath:@"Entry with children/Entry 2.2 green"], @"e22");
+	GHAssertNotNil(e23 = [root entryForTitlePath:@"Entry with children/Entry 2.3 blue"], nil);
+	GHAssertNotNil(e231 = [root entryForTitlePath:@"Entry with children/Entry 2.3 blue/Entry 2.3.1 cars"], nil);
+	GHAssertNotNil(e2311 = [root entryForTitlePath:@"Entry with children/Entry 2.3 blue/Entry 2.3.1 cars/Entry 2.3.1.1 coffeecup"], nil);
+	GHAssertNotNil(e2312 = [root entryForTitlePath:@"Entry with children/Entry 2.3 blue/Entry 2.3.1 cars/Watering pot"], nil);
+}
+
+- (void) testSettingParentInsertsChildEntry {
+	Entry *e24 = [Entry entryWithParent:e2 title:@"e24"];
+	GHAssertEquals(e2, e24.parent, nil);
+	NSArray *expected = [NSArray arrayWithObjects: e21, e22, e23, e24, nil];
+	GHAssertEqualObjects(expected, e2.entries, nil);
+}
+
+- (void) testSettingParentToNilRemovesChildEntry {
+	e22.parent = nil;
+	NSArray *expected = [NSArray arrayWithObjects: e21, e23, nil];
+	GHAssertEqualObjects(expected, e2.entries, nil);
+}
+
+- (void) testAbsoluteURL {
+	GHAssertEqualObjects([NSURL URLWithString:@"takeoff-test:///entry_2.html"], e2.absoluteURL, nil);
+	GHAssertEqualObjects([NSURL URLWithString:@"takeoff-test:///entry_2.1.html"], e21.absoluteURL, nil);
+	GHAssertEqualObjects([NSURL URLWithString:@"takeoff-test:///entry_2.html#2.2"], e22.absoluteURL, nil);
+	GHAssertEqualObjects([NSURL URLWithString:@"takeoff-test:///entry_2.html#2.3.1"], e231.absoluteURL, nil);
+	GHAssertEqualObjects([NSURL URLWithString:@"takeoff-test:///entry_2.html#2.3.1.1"], e2311.absoluteURL, nil);
+}
+
+- (void) testAbsoluteURLForFileURLs {
+	Entry *e = [Entry entryWithParent:nil title:@"a"];
+	e.url = @"file:///tmp/";
+
+	Entry *ee = [Entry entryWithParent:e title:@"b"];
+	ee.url = @"test.txt";
+
+	GHAssertEqualObjects([NSURL URLWithString:@"file:///tmp/test.txt"], ee.absoluteURL, nil);
+}
+
+- (void) testRelativeURLPaths {
+	Entry *e = [Entry entryWithParent:root title:@"a"];
+	e.url = @"/Bar/foo.html";
+
+	Entry *ee = [Entry entryWithParent:e title:@"b"];
+	ee.url = @"/Bar/foo.html#miauw";
+
+	GHAssertEqualObjects([NSURL URLWithString:@"takeoff-test:///Bar/foo.html#miauw"], ee.absoluteURL, nil);
+}
+
+- (void) testEntryForAbsoluteURL {
+	GHAssertEquals(e2, [root entryForAbsoluteURL:[NSURL URLWithString:@"takeoff-test:///entry_2.html"]], @"e2");
+	GHAssertEquals(e21, [root entryForAbsoluteURL:[NSURL URLWithString:@"takeoff-test:///entry_2.1.html"]], @"e21");
+	GHAssertNil([root entryForAbsoluteURL:[NSURL URLWithString:@"takeoff-test:///nothere.html"]], @"nothere");
+}
+
+- (void) testEntryForAbsoluteURLFragment {
+	GHAssertEqualObjects(e2, [root entryForAbsoluteURL:[NSURL URLWithString:@"takeoff-test:///entry_2.html#nothere"]], nil);
+	GHAssertEqualObjects(e22, [root entryForAbsoluteURL:[NSURL URLWithString:@"takeoff-test:///entry_2.html#2.2"]], nil);
+	GHAssertEqualObjects(e2, [root entryForAbsoluteURL:[NSURL URLWithString:@"takeoff-test:///entry_2.html"]], nil);
+}
+
+- (void) testEntriesFromJSON {
+	GHAssertEqualStrings(@"Example Book", root.title, @"title");
+}
+
+- (void) testEntryForTitlePath {
+	GHAssertNil([root entryForTitlePath:@"xxx/yyy"], @"entryForTitlePath");
+	GHAssertNil([root entryForTitlePath:@"Example Book"], @"entryForTitlePath");
+
+	Entry *expected = [root.entries objectAtIndex:1];
+	GHAssertEquals(expected, [root entryForTitlePath:@"Entry with children"], @"entryForTitlePath");
+
+	expected = [expected.entries objectAtIndex:0];
+	GHAssertEquals(expected, [[root entryForTitlePath:@"Entry with children"] entryForTitlePath:@"Test red"], @"entryForTitlePath");
+	GHAssertEquals(expected, [root entryForTitlePath:@"Entry with children/Test red"], @"entryForTitlePath");
+}
+
+- (void) testEntryForTitlePathDuplicateNames {
+	Entry *ex = [Entry entryWithParent:root title:@"Test"];
+	Entry *ex1 = [Entry entryWithParent:ex title:@"okay"];
+
+	Entry *e11 = [Entry entryWithParent:e1 title:@"magenta"];
+
+	GHAssertEquals(ex1, [root entryForTitlePath:@"Test/okay"], nil);
+	GHAssertEquals(e11, [root entryForTitlePath:@"Test/magenta"], nil);
+}
+
+- (void) testStorage {
+	GHAssertNotNil(root.storage, @"root storage");
+	GHAssertEquals(root.storage, [root entryForTitlePath:@"Entry with children/Test red"].book.storage, @"root");
+}
+
+- (void) testPath {
+	GHAssertEqualObjects([NSArray arrayWithObject:root], root.path, @"path");
+	NSArray *path = [NSArray arrayWithObjects:root, e2, e21, nil];
+	GHAssertEqualObjects(path, e21.path, @"path");
+}
+
+- (void) testDebugString {
+	GHAssertEqualStrings(@"Hello", [Entry entryWithParent:nil title:@"Hello"].debugString, @"debugString");
+	GHAssertEqualStrings([TestHelper stringForTestResource:@"test-index.txt"], root.debugString, @"debugString");
+}
+
+- (void) testParseDebugStringParentChild {
+	NSString *debugString = @"Parent\n\tChild";
+	GHAssertEqualStrings(debugString, [Entry parseDebugString:debugString].debugString, nil);
+}
+
+- (void) testParseDebugString {
+	NSString *debugString = [TestHelper stringForTestResource:@"NSDataOutline.txt"];
+
+	Entry *entry = [Entry parseDebugString:debugString];
+	GHAssertEqualStrings(@"Tasks", entry.title, nil);
+
+	GHAssertEqualStrings(debugString, entry.debugString, nil);
+}
+
+- (void) testTitlePath {
+	GHAssertEqualStrings(@"Example Book", root.titlePath, @"titlePath");
+	GHAssertEqualStrings(@"Example Book/Entry with children/Test red", e21.titlePath, @"titlePath");
+	GHAssertEqualStrings(@"", [[Entry new] titlePath], @"titlePath");
+}
+
+- (void) testLevel {
+	GHAssertEquals(0, root.level, nil);
+	GHAssertEquals(1, e2.level, nil);
+	GHAssertEquals(2, e21.level, nil);
+	GHAssertEquals(3, e231.level, nil);
+}
+
+- (void) resetSearchTree {
+	// some tests want to see the isolated behaviour of a leaf node, so we have to make the parents
+	// not matching, because otherwise they always would be included because of the 'children of
+	// matches are always included' rule
+	[root filter:@"xxx"];
+	GHAssertEquals(0, (int)root.match, nil);
+	GHAssertEquals(0, (int)e2.match, nil);
+	GHAssertEquals(0, (int)e21.match, nil);
+	GHAssertEquals(0, (int)e231.match, nil);
+}
+
+- (void) defaultIncludesAll {
+	GHAssertEquals(1, (int)root.match, nil);
+	GHAssertEquals(1, (int)e2311.match, nil);
+
+	GHAssertNotNil(e2311.filteredEntries, nil);
+	GHAssertEquals(0, (int)e2311.filteredEntries.count, nil);
+}
+
+- (void) testSearchLeaf {
+	[self resetSearchTree];
+
+	[e2311 filter:@"car"];
+	GHAssertNotNil(e2311.filteredEntries, nil);
+	GHAssertEquals(0, (int)e2311.filteredEntries.count, nil);
+	GHAssertEquals(0, (int)e2311.match, nil);
+	[e2311 filter:nil];
+	GHAssertNotNil(e2311.filteredEntries, nil);
+	GHAssertEquals(0, (int)e2311.filteredEntries.count, nil);
+	GHAssertEquals(1, (int)e2311.match, nil);
+}
+
+- (void) testMatchNode1 {
+	[self resetSearchTree];
+
+	[e231 filter:@"car"];
+	GHAssertEquals(1, (int)e231.match, nil);
+	GHAssertEqualObjects(e231.entries, e231.filteredEntries, nil);
+}
+
+- (void) testMatchNode2 {
+	[self resetSearchTree];
+	[e231 filter:@"coffee"];
+	GHAssertEquals(0, (int)e231.match, nil);
+	GHAssertEquals(1, (int)e2311.match, nil);
+	GHAssertEqualObjects([NSArray arrayWithObject:e2311], e231.filteredEntries, nil);
+}
+
+- (void) testMatchNode3 {
+	[self resetSearchTree];
+	[e2311 filter:@"co ff ee"];
+	GHAssertEquals(1, (int)e2311.match, nil);
+}
+
+// live re-filtering would be cool, but not required, and complicated to do
+/* - (void) testMatchInsertingNodeWithFilterApplied {
+	[self resetSearchTree];
+	root.filterTerm = @"coffee";
+	Entry *moreCoffee = [Entry entryWithParent:e231 title:@"more coffee"];
+	NSArray *expected = [NSArray arrayWithObjects:e2311, moreCoffee, nil];
+	GHAssertEqualObjects(expected, e231.filteredEntries, nil);
+}*/
+
+- (void) testCaseInsensitive {
+	[self resetSearchTree];
+	[e231 filter:@"CAR"];
+	GHAssertEquals(1, (int)e231.match, nil);
+}
+
+- (void) testMatchAutoIncludesEntries {
+	[e231 filter:@"car"];
+	GHAssertEquals(1, (int)e2311.match, nil);
+}
+
+- (void) testFilteredEntries {
+	[self resetSearchTree];
+	[root filter:@"red"];
+	GHAssertEquals(1, (int)e21.match, nil);
+	GHAssertEqualObjects([NSArray arrayWithObject:e21], e2.filteredEntries, nil);
+	GHAssertEqualObjects([NSArray arrayWithObject:e2], root.filteredEntries, nil);
+}
+
+- (void) testClearSearch1 {
+	[self resetSearchTree];
+	[root filter:nil];
+	GHAssertEqualStrings([TestHelper stringForTestResource:@"test-index.txt"], root.debugString, nil);
+}
+
+- (void) testClearSearch2 {
+	[self resetSearchTree];
+	[root filter:@""];
+	GHAssertEqualStrings([TestHelper stringForTestResource:@"test-index.txt"], root.debugString, nil);
+}
+
+- (void) testSearchExample1 {
+	[root filter:@"car"];
+	GHAssertEqualStrings([TestHelper stringForTestResource:@"test-search-car.txt"], root.debugString, nil);
+}
+
+- (void) testSearchExample2 {
+	[root filter:@"gre"];
+	GHAssertEqualStrings([TestHelper stringForTestResource:@"test-search-gre.txt"], root.debugString, nil);
+}
+
+- (void) testCrossNodeMatch {
+	[root filter:@"children blue car"];
+	GHAssertEqualStrings([TestHelper stringForTestResource:@"test-search-car.txt"], root.debugString, nil);
+}
+
+- (void) testBook {
+	GHAssertEquals(root, root.book, nil);
+	GHAssertEquals(root, e2311.book, nil);
+}
+
+- (void) testRanking {
+	Entry *entry = [Entry parseDebugString:[TestHelper stringForTestResource:@"ranking.toc"]];
+	[entry filter:@"foo"];
+	[entry filter:@"String"];
+	NSString* rankedStr = [entry debugRankingString];
+	GHAssertEqualStrings([TestHelper stringForTestResource:@"ranking-1.toc"], rankedStr, nil);
+}
+
+@end
