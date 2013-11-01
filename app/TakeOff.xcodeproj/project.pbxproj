@@ -112,7 +112,6 @@
 		BF8CA59A141697A900D6154A /* DocSetBookProvider.m in Sources */ = {isa = PBXBuildFile; fileRef = BF8CA599141697A900D6154A /* DocSetBookProvider.m */; };
 		BF8CA59B141697A900D6154A /* DocSetBookProvider.m in Sources */ = {isa = PBXBuildFile; fileRef = BF8CA599141697A900D6154A /* DocSetBookProvider.m */; };
 		BF96CF281401BF0400CB18C8 /* LocalStubURLProtocolTest.m in Sources */ = {isa = PBXBuildFile; fileRef = BF96CF271401BF0100CB18C8 /* LocalStubURLProtocolTest.m */; };
-		BF9DED5E18220DD00008EBB3 /* LocalStubURLProtocol.m in Sources */ = {isa = PBXBuildFile; fileRef = BF9DED5C18220D790008EBB3 /* LocalStubURLProtocol.m */; };
 		BF9E5CEE1414BCD10045EFB5 /* Library-coffee.txt in Resources */ = {isa = PBXBuildFile; fileRef = BF9E5CED1414BCD10045EFB5 /* Library-coffee.txt */; };
 		BFA01AD0140582B900AC024A /* Book.test in Sources */ = {isa = PBXBuildFile; fileRef = BFA01ACE140582B400AC024A /* Book.test */; };
 		BFA3AE56147142C700AA2DB1 /* TestDraggingInfo.m in Sources */ = {isa = PBXBuildFile; fileRef = BFA3AE55147142C700AA2DB1 /* TestDraggingInfo.m */; };
@@ -297,8 +296,6 @@
 		BF8CA598141697A900D6154A /* DocSetBookProvider.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DocSetBookProvider.h; sourceTree = "<group>"; };
 		BF8CA599141697A900D6154A /* DocSetBookProvider.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DocSetBookProvider.m; sourceTree = "<group>"; };
 		BF96CF271401BF0100CB18C8 /* LocalStubURLProtocolTest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LocalStubURLProtocolTest.m; sourceTree = "<group>"; };
-		BF9DED5B18220D790008EBB3 /* LocalStubURLProtocol.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LocalStubURLProtocol.h; sourceTree = "<group>"; };
-		BF9DED5C18220D790008EBB3 /* LocalStubURLProtocol.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LocalStubURLProtocol.m; sourceTree = "<group>"; };
 		BF9E5CED1414BCD10045EFB5 /* Library-coffee.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "Library-coffee.txt"; sourceTree = "<group>"; };
 		BFA01ACE140582B400AC024A /* Book.test */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.objc; fileEncoding = 4; path = Book.test; sourceTree = "<group>"; };
 		BFA3AE54147142C700AA2DB1 /* TestDraggingInfo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TestDraggingInfo.h; sourceTree = "<group>"; };
@@ -492,8 +489,6 @@
 				BFA3AE55147142C700AA2DB1 /* TestDraggingInfo.m */,
 				BF062597144A430A00565E04 /* UITestingSupport.h */,
 				BF062598144A430A00565E04 /* UITestingSupport.m */,
-				BF9DED5B18220D790008EBB3 /* LocalStubURLProtocol.h */,
-				BF9DED5C18220D790008EBB3 /* LocalStubURLProtocol.m */,
 			);
 			path = TestSupport;
 			sourceTree = "<group>";
@@ -1029,7 +1024,6 @@
 				BF0FD700140449F200E109A5 /* DocSet.m in Sources */,
 				BF4495211405504900E645D8 /* Entry.test in Sources */,
 				BFA01AD0140582B900AC024A /* Book.test in Sources */,
-				BF9DED5E18220DD00008EBB3 /* LocalStubURLProtocol.m in Sources */,
 				BF4C47B11405B1E4001C6B15 /* DocSet.test in Sources */,
 				BF32F846140692CF00BA7594 /* MainWindowController.test in Sources */,
 				BF32F8471406AE4C00BA7594 /* NSOutlineView+Additions.m in Sources */,

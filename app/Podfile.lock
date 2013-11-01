@@ -1,10 +1,12 @@
 PODS:
   - GHUnit (0.5.7)
+  - LocalStubURLProtocol (0.1.0)
   - OCMock (2.2.1)
   - Reachability (3.1.1)
 
 DEPENDENCIES:
   - GHUnit (from `https://github.com/ralfebert/gh-unit.git`, commit `ea2f1e5a803245d3f9164f9a062433911a0eea1a`)
+  - LocalStubURLProtocol (from `git@github.com:ralfebert/LocalStubURLProtocol.git`)
   - OCMock (~> 2.2.1)
   - Reachability
 
@@ -12,9 +14,12 @@ EXTERNAL SOURCES:
   GHUnit:
     :commit: ea2f1e5a803245d3f9164f9a062433911a0eea1a
     :git: https://github.com/ralfebert/gh-unit.git
+  LocalStubURLProtocol:
+    :git: git@github.com:ralfebert/LocalStubURLProtocol.git
 
 SPEC CHECKSUMS:
   GHUnit: 4bd436b5658de8d5469d70e37b0ae80a37ba5b16
+  LocalStubURLProtocol: 0cfa87a7a824e3886eec7cce78a93cffcf5d4a87
   OCMock: 80e4cfbc71a0e1bd28caf10a9fda27da7c4c8402
   Reachability: 2be6bc2fd2bd31d97f5db33e75e4b29c79e95883
 
