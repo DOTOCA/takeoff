@@ -67,7 +67,7 @@ static NSMutableArray *urlLog;
 #pragma mark - NSURLProtocol
 
 + (BOOL) canInitWithRequest:(NSURLRequest *)request {
-    return responseHandler(request) != nil;
+    return responseHandler && responseHandler(request) != nil;
 }
 
 + (NSURLRequest *) canonicalRequestForRequest:(NSURLRequest *)request {
