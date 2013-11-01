@@ -22,7 +22,6 @@
 		BF062599144A430A00565E04 /* TestHelper.m in Sources */ = {isa = PBXBuildFile; fileRef = BF062596144A430A00565E04 /* TestHelper.m */; };
 		BF06259A144A430A00565E04 /* UITestingSupport.m in Sources */ = {isa = PBXBuildFile; fileRef = BF062598144A430A00565E04 /* UITestingSupport.m */; };
 		BF087A7E1407ACBB0049743A /* jquery.js in Resources */ = {isa = PBXBuildFile; fileRef = BF31AEFC140056DA00FB0E4F /* jquery.js */; };
-		BF09456417C7A40400214D8E /* GHUnit.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = BF6AE0CB169F799A006A9668 /* GHUnit.framework */; };
 		BF096D2E1805E9BC00E7C4DC /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BF096D2D1805E9BC00E7C4DC /* Cocoa.framework */; };
 		BF096D311805EED400E7C4DC /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BF096D301805EED400E7C4DC /* Images.xcassets */; };
 		BF0FD6C71403F15500E109A5 /* RedirectResourceLoadDelegateTest.m in Sources */ = {isa = PBXBuildFile; fileRef = BF0FD6C51403F15000E109A5 /* RedirectResourceLoadDelegateTest.m */; };
@@ -98,7 +97,6 @@
 		BF6AAD6D147050B5008A4401 /* Foundation+Additions.m in Sources */ = {isa = PBXBuildFile; fileRef = BF6AAD6B147050B5008A4401 /* Foundation+Additions.m */; };
 		BF6AAD6E147050B5008A4401 /* Foundation+Additions.m in Sources */ = {isa = PBXBuildFile; fileRef = BF6AAD6B147050B5008A4401 /* Foundation+Additions.m */; };
 		BF6AAD781470532B008A4401 /* GHUnitTestMain.m in Sources */ = {isa = PBXBuildFile; fileRef = BF6AAD771470532B008A4401 /* GHUnitTestMain.m */; };
-		BF6AE0CC169F799A006A9668 /* GHUnit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BF6AE0CB169F799A006A9668 /* GHUnit.framework */; };
 		BF736A4213F5F56700DFA205 /* FileUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = BF736A4113F5F56700DFA205 /* FileUtils.m */; };
 		BF736A4413F5F56B00DFA205 /* FileUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = BF736A4113F5F56700DFA205 /* FileUtils.m */; };
 		BF736A4713F5F6F300DFA205 /* NSData+Utils.m in Sources */ = {isa = PBXBuildFile; fileRef = BF736A4613F5F6F300DFA205 /* NSData+Utils.m */; };
@@ -168,7 +166,6 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				BF09456417C7A40400214D8E /* GHUnit.framework in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -284,7 +281,6 @@
 		BF6AAD6A147050B5008A4401 /* Foundation+Additions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "Foundation+Additions.h"; sourceTree = "<group>"; };
 		BF6AAD6B147050B5008A4401 /* Foundation+Additions.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "Foundation+Additions.m"; sourceTree = "<group>"; };
 		BF6AAD771470532B008A4401 /* GHUnitTestMain.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GHUnitTestMain.m; sourceTree = "<group>"; };
-		BF6AE0CB169F799A006A9668 /* GHUnit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = GHUnit.framework; sourceTree = "<group>"; };
 		BF6E97E61802224100F04FE4 /* TakeOff.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = TakeOff.entitlements; sourceTree = "<group>"; };
 		BF736A4013F5F56700DFA205 /* FileUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = FileUtils.h; path = ../FileUtils.h; sourceTree = "<group>"; };
 		BF736A4113F5F56700DFA205 /* FileUtils.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = FileUtils.m; path = ../FileUtils.m; sourceTree = "<group>"; };
@@ -368,7 +364,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				BF8207C21806100E00A5C1A0 /* Cocoa.framework in Frameworks */,
-				BF6AE0CC169F799A006A9668 /* GHUnit.framework in Frameworks */,
 				BF53E9961405E29F00BE0A92 /* libsqlite3.dylib in Frameworks */,
 				BFB2282E13F428F1003EEE49 /* WebKit.framework in Frameworks */,
 				BFB2283013F428FC003EEE49 /* libz.dylib in Frameworks */,
@@ -458,7 +453,6 @@
 			isa = PBXGroup;
 			children = (
 				BF096D2D1805E9BC00E7C4DC /* Cocoa.framework */,
-				BF6AE0CB169F799A006A9668 /* GHUnit.framework */,
 				BFE3DE3013E632CF0043F973 /* IOKit.framework */,
 				BFE3DE2D13E632CB0043F973 /* Security.framework */,
 				1058C7A2FEA54F0111CA2CBB /* Other Frameworks */,

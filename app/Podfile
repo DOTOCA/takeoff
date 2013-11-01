@@ -4,4 +4,6 @@ pod 'Reachability'
 
 target :TakeOffTests, :exclusive => false do
 	pod 'OCMock', '~> 2.2.1'
+	# GHUnit with support for GHTestMacros outside of test class
+	pod 'GHUnit', :git => 'https://github.com/ralfebert/gh-unit.git', :commit => 'ea2f1e5a803245d3f9164f9a062433911a0eea1a'
 end
